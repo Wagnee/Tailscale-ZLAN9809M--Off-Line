@@ -24,7 +24,7 @@ Usando compressão XZ no binário, alcançamos **4.9MB**, que está dentro do li
 ## Especificações do Dispositivo
 
 - **Processador**: MediaTek MT7628NN (MIPS 24Kc, little-endian)
-- **Flash**: 16MB total (4MB disponível para instalação)
+- **Flash**: 16MB total (4.5MB disponível para instalação)
 - **RAM**: 64MB/128MB
 - **Arquitetura**: mipsel_24kc
 
@@ -110,30 +110,30 @@ Isso irá:
 1. Baixar o código fonte do Tailscale v1.68.1
 2. Compilar para arquitetura mipsel_24kc com otimizações
 3. Aplicar strip e compressão XZ
-4. Gerar o binário `tailscaled.xz` (~4.9MB)
+4. Gerar o binário `tailscaled.xz` (~4.8MB)
 
 ### Empacotamento
 
-Para criar o pacote IPK com compressão XZ (recomendado):
+Para criar o pacote IPK core (recomendado):
 
 ```bash
-./package-xz.sh
+./package-xz-ultra.sh
 ```
 
-Para criar o pacote IPK com UPX (maior, sem dependência xz):
+Para criar o pacote IPK LuCI (opcional):
 
 ```bash
-./package-minimal.sh
+./package-luci.sh
 ```
 
 ## Instalação
 
 ### Via IPK (Recomendado)
 
-Copie o arquivo IPK para o roteador:
+**Passo 1: Instalar pacote core**
 
 ```bash
-scp output/tailscale-zlan9809m-xz_1.68.1-1_mipsel_24kc.ipk root@router-ip:/tmp/
+scp output/tailscale-zlan9809m-core_1.68.1-1_mipsel_24kc.ipk root@router-ip:/tmp/
 ```
 
 No roteador:
@@ -141,10 +141,23 @@ No roteador:
 ```bash
 opkg update
 opkg install xz
-opkg install /tmp/tailscale-zlan9809m-xz_1.68.1-1_mipsel_24kc.ipk
+opkg install /tmp/tailscale-zlan9809m-core_1.68.1-1_mipsel_24kc.ipk
 ```
 
-**Nota:** O binário será descomprimido automaticamente na primeira inicialização. Isso pode levar alguns segundos.
+**Passo 2 (Opcional): Instalar interface LuCI**
+
+```bash
+scp output/luci-app-tailscale-zlan9809m_1.68.1-1_mipsel_24kc.ipk root@router-ip:/tmp/
+```
+
+No roteador:
+
+```bash
+opkg install /tmp/luci-app-tailscale-zlan9809m_1.68.1-1_mipsel_24kc.ipk
+/etc/init.d/uhttpd restart
+```
+
+**Nota:** O binário será descomprimido automaticamente no primeiro boot. Isso pode levar alguns segundos.
 
 ### Via Script de Instalação
 
