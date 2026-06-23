@@ -4,6 +4,10 @@ Este projeto fornece uma versão otimizada do Tailscale para o roteador ZLAN9809
 
 Para instalar use: wget -qO- https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/main/auto_install.sh | bash
 
+O instalador automático prepara os feeds do OPKG e processa cada componente
+separadamente: baixa um pacote, instala, remove o IPK temporário e só então
+continua para o próximo. Isso reduz o uso simultâneo de RAM em `/tmp`.
+
 ## ⚠️ Limitação de Tamanho e Solução
 
 Após extensivas otimizações (remoção de funcionalidades, compressão UPX, build tags, strip, código fonte), o menor tamanho alcançado com UPX foi **5.1MB**.

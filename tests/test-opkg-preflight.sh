@@ -16,12 +16,17 @@ mkdir -p "$TEST_ROOT/etc/opkg"
 
 cat > "$TEST_ROOT/etc/opkg.conf" <<'EOF'
 dest root /
-src/gz openwrt_core https://downloads.openwrt.org/core-first
+src/gz openwrt_core https://openwrt.org
 EOF
 
 cat > "$TEST_ROOT/etc/opkg/distfeeds.conf" <<'EOF'
 src/gz openwrt_base https://downloads.openwrt.org/base
-src openwrt_core https://downloads.openwrt.org/core-duplicate
+# tailscale-opkg-preflight: fonte "openwrt_core" duplicada; primeira declaração em /etc/opkg.conf:2
+# src/gz openwrt_core https://downloads.openwrt.org/releases/21.02.0/targets/ramips/mt76x8/packages
+EOF
+
+cat > "$TEST_ROOT/etc/opkg/lorafeeds.conf" <<'EOF'
+src/gz openwrt_lora https://downloads.openwrt.org/releases/21.02.0/packages/mipsel_24kc/lora
 EOF
 
 cat > "$TEST_ROOT/etc/opkg/customfeeds.conf" <<'EOF'
@@ -36,13 +41,17 @@ OPKG_BACKUP_SUFFIX=".test-backup" \
 "$TEST_SHELL" "$PROJECT_DIR/opkg-preflight.sh"
 
 [ -d "$TEST_ROOT/var/lock" ]
+[ -f "$TEST_ROOT/etc/opkg.conf.test-backup" ]
 [ -f "$TEST_ROOT/etc/opkg/distfeeds.conf.test-backup" ]
+[ -f "$TEST_ROOT/etc/opkg/lorafeeds.conf.test-backup" ]
 [ -f "$TEST_ROOT/etc/opkg/customfeeds.conf.test-backup" ]
 
-grep -q '^src/gz openwrt_core https://downloads.openwrt.org/core-first$' \
+grep -q '^# src/gz openwrt_core https://openwrt.org$' \
     "$TEST_ROOT/etc/opkg.conf"
-grep -q '^# src openwrt_core https://downloads.openwrt.org/core-duplicate$' \
+grep -q '^src/gz openwrt_core https://downloads.openwrt.org/releases/21.02.0/targets/ramips/mt76x8/packages$' \
     "$TEST_ROOT/etc/opkg/distfeeds.conf"
+grep -q '^# src/gz openwrt_lora https://downloads.openwrt.org/releases/21.02.0/packages/mipsel_24kc/lora$' \
+    "$TEST_ROOT/etc/opkg/lorafeeds.conf"
 grep -q '^# src/gz vendor_packages https://vendor.example/packages-duplicate$' \
     "$TEST_ROOT/etc/opkg/customfeeds.conf"
 

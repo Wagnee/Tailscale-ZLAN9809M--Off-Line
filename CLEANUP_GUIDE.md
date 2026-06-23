@@ -377,12 +377,13 @@ wget -O- https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/
 O script `auto_install.sh` faz tudo automaticamente:
 1. Mostra especificações do hardware
 2. Mostra estado antes (memória/armazenamento)
-3. Baixa e executa cleanup.sh
-4. Instala Tailscale core
-5. Instala LuCI
-6. Configura Tailscale
-7. Mostra estado depois (memória/armazenamento)
-8. Fornece instruções finais
+3. Corrige o lock e os feeds inválidos ou duplicados do OPKG
+4. Atualiza os índices e instala cada dependência separadamente
+5. Baixa, instala e remove cada IPK antes de baixar o próximo
+6. Instala Tailscale core e LuCI
+7. Configura Tailscale
+8. Mostra estado depois (memória/armazenamento)
+9. Fornece instruções finais
 
 ### Método 2: Scripts Individuais
 

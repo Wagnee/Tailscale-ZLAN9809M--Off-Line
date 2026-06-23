@@ -214,14 +214,19 @@ logread | grep tailscale
 
 ## Solução de Problemas
 
-### Erro: fonte duplicada ou `/var/lock/opkg.lock` inexistente
+### Erro: fonte duplicada, assinatura inválida, feed `lora` ou lock inexistente
 
 Os instaladores executam `opkg-preflight.sh` antes do primeiro comando `opkg`. O script:
 
 - cria `/var/lock` quando o firmware não o criou;
 - procura declarações `src` e `src/gz` com o mesmo nome em `/etc/opkg.conf` e `/etc/opkg/*.conf`;
-- mantém a primeira declaração, que é a mesma escolhida pelo `opkg`;
+- desativa a URL raiz `openwrt.org`, que retorna uma página web em vez de um índice OPKG válido;
+- desativa o feed `lora` de OpenWrt 21.02 para `mipsel_24kc`, pois ele não existe nessa release;
+- mantém a primeira declaração válida para cada nome de feed;
 - comenta somente as declarações posteriores e preserva um backup com sufixo `.tailscale-backup`.
+
+O preflight também reconhece comentários gerados por versões anteriores dele
+mesmo e reativa o feed correto de `openwrt_core` quando necessário.
 
 Para corrigir manualmente uma instalação que já parou com esse erro:
 

@@ -74,11 +74,9 @@ cd "$TMPDIR"
 
 # Detectar curl ou wget
 if command -v curl >/dev/null 2>&1; then
-    DOWNLOAD_CMD="curl -fL"
-    DOWNLOAD_OPTS="-o"
+    DOWNLOAD_TOOL="curl"
 elif command -v wget >/dev/null 2>&1; then
-    DOWNLOAD_CMD="wget -q"
-    DOWNLOAD_OPTS="-O"
+    DOWNLOAD_TOOL="wget"
 else
     echo "ERRO: curl ou wget não encontrado. Instale um deles primeiro."
     exit 1
@@ -86,71 +84,101 @@ fi
 
 REPO_URL="https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/main"
 
+download_file() {
+    local source_url="$1"
+    local output_file="$2"
+    local description="$3"
+    local partial_file="${output_file}.part"
+
+    rm -f "$output_file" "$partial_file"
+    echo "Baixando $description..."
+
+    if [ "$DOWNLOAD_TOOL" = "curl" ]; then
+        if ! curl -fL --retry 3 --retry-delay 2 -o "$partial_file" "$source_url"; then
+            rm -f "$partial_file"
+            echo "ERRO: Falha ao baixar $description." >&2
+            return 1
+        fi
+    elif ! wget -q -O "$partial_file" "$source_url"; then
+        rm -f "$partial_file"
+        echo "ERRO: Falha ao baixar $description." >&2
+        return 1
+    fi
+
+    if [ ! -s "$partial_file" ]; then
+        rm -f "$partial_file"
+        echo "ERRO: O download de $description está vazio." >&2
+        return 1
+    fi
+
+    mv "$partial_file" "$output_file"
+}
+
+install_opkg_package() {
+    local package_name="$1"
+
+    echo "Instalando dependência: $package_name"
+    opkg install "$package_name"
+}
+
+install_remote_ipk() {
+    local description="$1"
+    local repository_path="$2"
+    local local_file="$3"
+
+    echo "=========================================="
+    echo "Baixando e instalando $description..."
+    echo "=========================================="
+
+    if ! download_file "$REPO_URL/$repository_path" "$local_file" "$description"; then
+        return 1
+    fi
+
+    if ! opkg install "./$local_file"; then
+        rm -f "$local_file"
+        echo "ERRO: Falha ao instalar $description." >&2
+        return 1
+    fi
+
+    rm -f "$local_file"
+    echo "$description instalado; arquivo temporário removido."
+}
+
+install_remote_file() {
+    local description="$1"
+    local repository_path="$2"
+    local destination="$3"
+    local permissions="$4"
+    local temporary_file="remote-component.tmp"
+
+    if ! download_file "$REPO_URL/$repository_path" "$temporary_file" "$description"; then
+        return 1
+    fi
+
+    if ! cp "$temporary_file" "$destination"; then
+        rm -f "$temporary_file"
+        echo "ERRO: Falha ao copiar $description para $destination." >&2
+        return 1
+    fi
+
+    chmod "$permissions" "$destination"
+    rm -f "$temporary_file"
+    echo "$description instalado; arquivo temporário removido."
+}
+
 # Corrigir feeds duplicados e garantir que o OPKG consiga criar seu lock.
 echo "=========================================="
 echo "Preparando OPKG..."
 echo "=========================================="
-if ! $DOWNLOAD_CMD "$REPO_URL/opkg-preflight.sh" $DOWNLOAD_OPTS opkg-preflight.sh; then
+if ! download_file "$REPO_URL/opkg-preflight.sh" opkg-preflight.sh "preparador do OPKG"; then
     echo "ERRO: Não foi possível baixar o preparador do OPKG." >&2
     exit 1
 fi
 chmod +x opkg-preflight.sh
 ./opkg-preflight.sh
+rm -f opkg-preflight.sh
 echo "Pacotes instalados: $(opkg list-installed | wc -l)"
 echo ""
-
-# Baixar scripts necessários
-echo "=========================================="
-echo "Baixando scripts..."
-echo "=========================================="
-# Baixar cleanup.sh
-#echo "Baixando cleanup.sh..."
-#$DOWNLOAD_CMD "$REPO_URL/cleanup.sh" $DOWNLOAD_OPTS cleanup.sh
-#chmod +x cleanup.sh
-
-# Baixar pacotes IPK (se disponíveis no repositório)
-echo "Baixando pacotes IPK..."
-$DOWNLOAD_CMD "$REPO_URL/output/tailscale-zlan9809m-core_1.68.1-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS tailscale-core.ipk || echo "Pacote core não encontrado no repositório"
-$DOWNLOAD_CMD "$REPO_URL/output/luci-app-tailscale-zlan9809m_1.68.1-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS tailscale-luci.ipk || echo "Pacote LuCI não encontrado no repositório"
-
-# Baixar pacotes Modbus+MQTT se solicitado
-if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
-    echo "Baixando pacotes Modbus+MQTT..."
-    $DOWNLOAD_CMD "$REPO_URL/output/libmodbus_3.1.10-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS libmodbus.ipk || echo "Pacote libmodbus não encontrado"
-    $DOWNLOAD_CMD "$REPO_URL/output/mosquitto-client_2.0.18-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS mosquitto-client.ipk || echo "Pacote mosquitto-client não encontrado"
-    $DOWNLOAD_CMD "$REPO_URL/output/modbus-daemon_1.0-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS modbus-daemon.ipk || echo "Pacote modbus-daemon não encontrado"
-    $DOWNLOAD_CMD "$REPO_URL/output/mqtt-daemon_1.0-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS mqtt-daemon.ipk || echo "Pacote mqtt-daemon não encontrado"
-    $DOWNLOAD_CMD "$REPO_URL/output/luci-app-modbus_1.0-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS luci-modbus.ipk || echo "Pacote luci-modbus não encontrado"
-    $DOWNLOAD_CMD "$REPO_URL/output/luci-app-mqtt_1.0-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS luci-mqtt.ipk || echo "Pacote luci-mqtt não encontrado"
-fi
-
-# Baixar scripts de auto-update se solicitado
-if [ "$INSTALL_AUTO_UPDATE" = "y" ]; then
-    echo "Baixando scripts de auto-update..."
-    $DOWNLOAD_CMD "$REPO_URL/scripts/auto-update-daemon.sh" $DOWNLOAD_OPTS auto-update-daemon.sh || echo "Daemon não encontrado"
-    $DOWNLOAD_CMD "$REPO_URL/scripts/auto-update-whitelist.conf" $DOWNLOAD_OPTS auto-update-whitelist.conf || echo "Whitelist não encontrado"
-    $DOWNLOAD_CMD "$REPO_URL/scripts/install-auto-update-daemon.sh" $DOWNLOAD_OPTS install-auto-update-daemon.sh || echo "Script de instalação não encontrado"
-fi
-
-# Baixar CPU Management se solicitado
-if [ "$INSTALL_CPU_MGMT" = "y" ]; then
-    echo "Baixando CPU Management..."
-    $DOWNLOAD_CMD "$REPO_URL/cpu-governor-manager.sh" $DOWNLOAD_OPTS cpu-governor-manager.sh || echo "CPU Governor Manager não encontrado"
-fi
-
-# Verificar se os pacotes foram baixados
-if [ ! -f tailscale-core.ipk ]; then
-    echo "=========================================="
-    echo "ERRO: Pacote IPK não encontrado no repositório"
-    echo "=========================================="
-    echo "Por favor, transfira os pacotes manualmente:"
-    echo "1. Baixe: https://github.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/releases"
-    echo "2. Transfira para o roteador:"
-    echo "   scp tailscale-zlan9809m-core_*.ipk root@router-ip:/tmp/"
-    echo "   scp luci-app-tailscale-zlan9809m_*.ipk root@router-ip:/tmp/"
-    echo "3. Execute: ./cleanup.sh && ./install.sh"
-    exit 1
-fi
 
 # Executar limpeza
 #echo "=========================================="
@@ -163,21 +191,24 @@ echo "=========================================="
 echo "Instalando dependências..."
 echo "=========================================="
 opkg update
-opkg install kmod-tun ca-bundle xz
+install_opkg_package kmod-tun
+install_opkg_package ca-bundle
+install_opkg_package xz
 
-# Instalar pacote core
-echo "=========================================="
-echo "Instalando Tailscale Core..."
-echo "=========================================="
-opkg install tailscale-core.ipk
+# Baixar e instalar cada IPK separadamente para limitar o uso de /tmp.
+install_remote_ipk \
+    "Tailscale Core" \
+    "output/tailscale-zlan9809m-core_1.68.1-1_mipsel_24kc.ipk" \
+    "tailscale-core.ipk"
 
 # Instalar pacote LuCI
-if [ -f tailscale-luci.ipk ]; then
-    echo "=========================================="
-    echo "Instalando LuCI..."
-    echo "=========================================="
-    opkg install tailscale-luci.ipk
+if install_remote_ipk \
+    "Tailscale LuCI" \
+    "output/luci-app-tailscale-zlan9809m_1.68.1-1_mipsel_24kc.ipk" \
+    "tailscale-luci.ipk"; then
     /etc/init.d/uhttpd restart
+else
+    echo "AVISO: Tailscale Core foi instalado, mas a interface LuCI falhou." >&2
 fi
 
 # Instalar Modbus+MQTT se solicitado
@@ -185,23 +216,32 @@ if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
     echo "=========================================="
     echo "Instalando Modbus+MQTT..."
     echo "=========================================="
-    
-    # Instalar dependências
-    opkg install libmodbus.ipk 2>/dev/null || echo "libmodbus não encontrado, continuando..."
-    opkg install mosquitto-client.ipk 2>/dev/null || echo "mosquitto-client não encontrado, continuando..."
-    
-    # Instalar daemons
-    opkg install modbus-daemon.ipk 2>/dev/null || echo "modbus-daemon não encontrado"
-    opkg install mqtt-daemon.ipk 2>/dev/null || echo "mqtt-daemon não encontrado"
-    
-    # Instalar interfaces LuCI
-    opkg install luci-modbus.ipk 2>/dev/null || echo "luci-modbus não encontrado"
-    opkg install luci-mqtt.ipk 2>/dev/null || echo "luci-mqtt não encontrado"
-    
-    # Reiniciar LuCI se instalou interfaces
-    if [ -f luci-modbus.ipk ] || [ -f luci-mqtt.ipk ]; then
-        /etc/init.d/uhttpd restart
-    fi
+    install_remote_ipk \
+        "libmodbus" \
+        "output/libmodbus_3.1.10-1_mipsel_24kc.ipk" \
+        "libmodbus.ipk"
+    install_remote_ipk \
+        "Mosquitto Client" \
+        "output/mosquitto-client_2.0.18-1_mipsel_24kc.ipk" \
+        "mosquitto-client.ipk"
+    install_remote_ipk \
+        "Modbus Daemon" \
+        "output/modbus-daemon_1.0-1_mipsel_24kc.ipk" \
+        "modbus-daemon.ipk"
+    install_remote_ipk \
+        "MQTT Daemon" \
+        "output/mqtt-daemon_1.0-1_mipsel_24kc.ipk" \
+        "mqtt-daemon.ipk"
+    install_remote_ipk \
+        "LuCI Modbus" \
+        "output/luci-app-modbus_1.0-1_mipsel_24kc.ipk" \
+        "luci-modbus.ipk"
+    install_remote_ipk \
+        "LuCI MQTT" \
+        "output/luci-app-mqtt_1.0-1_mipsel_24kc.ipk" \
+        "luci-mqtt.ipk"
+
+    /etc/init.d/uhttpd restart
     
     echo "Modbus+MQTT instalado!"
 fi
@@ -211,7 +251,7 @@ if [ "$INSTALL_TERMINAL" = "y" ]; then
     echo "=========================================="
     echo "Instalando Terminal Web..."
     echo "=========================================="
-    opkg install luci-app-terminal
+    install_opkg_package luci-app-terminal
     /etc/init.d/uhttpd restart
     echo "Terminal Web instalado!"
     echo "Acesse em: LuCI → System → Terminal"
@@ -225,20 +265,17 @@ if [ "$INSTALL_AUTO_UPDATE" = "y" ]; then
     
     # Criar diretório para scripts
     mkdir -p /usr/lib/auto-update
-    
-    # Copiar scripts
-    if [ -f auto-update-daemon.sh ]; then
-        cp auto-update-daemon.sh /usr/lib/auto-update/
-        chmod +x /usr/lib/auto-update/auto-update-daemon.sh
-        echo "Daemon copiado para /usr/lib/auto-update/"
-    fi
-    
-    # Copiar whitelist
-    if [ -f auto-update-whitelist.conf ]; then
-        cp auto-update-whitelist.conf /etc/
-        chmod 644 /etc/auto-update-whitelist.conf
-        echo "Whitelist copiada para /etc/"
-    fi
+
+    install_remote_file \
+        "Auto-Update Daemon" \
+        "scripts/auto-update-daemon.sh" \
+        "/usr/lib/auto-update/auto-update-daemon.sh" \
+        "0755"
+    install_remote_file \
+        "whitelist do Auto-Update" \
+        "scripts/auto-update-whitelist.conf" \
+        "/etc/auto-update-whitelist.conf" \
+        "0644"
     
     # Criar diretório para hashes
     mkdir -p /var/lib/auto-update-executed
@@ -279,27 +316,39 @@ if [ "$INSTALL_CPU_MGMT" = "y" ]; then
     echo "Instalando CPU Management..."
     echo "=========================================="
     
-    # Copiar script de gerenciamento
-    if [ -f cpu-governor-manager.sh ]; then
-        cp cpu-governor-manager.sh /usr/bin/
-        chmod +x /usr/bin/cpu-governor-manager.sh
-        echo "Script de gerenciamento copiado para /usr/bin/"
-    fi
-    
-    # Copiar init script
-    cp files/etc/init.d/cpufreq-manager /etc/init.d/
-    chmod +x /etc/init.d/cpufreq-manager
-    echo "Init script copiado para /etc/init.d/"
-    
     # Criar diretório para módulo LuCI
     mkdir -p /usr/lib/lua/luci/controller
     mkdir -p /usr/lib/lua/luci/model/cbi
     mkdir -p /usr/lib/lua/luci/view/cpufreq
-    
-    # Copiar módulo LuCI
-    cp luci/cpufreq/luasrc/controller/cpufreq.lua /usr/lib/lua/luci/controller/
-    cp luci/cpufreq/luasrc/model/cbi/cpufreq.lua /usr/lib/lua/luci/model/cbi/
-    cp luci/cpufreq/luasrc/view/cpufreq/*.htm /usr/lib/lua/luci/view/cpufreq/
+
+    install_remote_file \
+        "CPU Governor Manager" \
+        "cpu-governor-manager.sh" \
+        "/usr/bin/cpu-governor-manager.sh" \
+        "0755"
+    install_remote_file \
+        "serviço CPU Frequency Manager" \
+        "files/etc/init.d/cpufreq-manager" \
+        "/etc/init.d/cpufreq-manager" \
+        "0755"
+    install_remote_file \
+        "controller LuCI de CPU" \
+        "luci/cpufreq/luasrc/controller/cpufreq.lua" \
+        "/usr/lib/lua/luci/controller/cpufreq.lua" \
+        "0644"
+    install_remote_file \
+        "modelo LuCI de CPU" \
+        "luci/cpufreq/luasrc/model/cbi/cpufreq.lua" \
+        "/usr/lib/lua/luci/model/cbi/cpufreq.lua" \
+        "0644"
+
+    for view_name in frequency governor max_frequency temperature; do
+        install_remote_file \
+            "view LuCI de CPU: $view_name" \
+            "luci/cpufreq/luasrc/view/cpufreq/$view_name.htm" \
+            "/usr/lib/lua/luci/view/cpufreq/$view_name.htm" \
+            "0644"
+    done
     
     # Habilitar serviço
     /etc/init.d/cpufreq-manager enable
