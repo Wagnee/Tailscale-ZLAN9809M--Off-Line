@@ -2,19 +2,24 @@
 
 Este projeto fornece uma versão otimizada do Tailscale para o roteador ZLAN9809M.
 
-## ⚠️ Limitação de Tamanho
+## ⚠️ Limitação de Tamanho e Solução
 
-Após extensivas otimizações (remoção de funcionalidades, compressão UPX, build tags), o menor tamanho alcançado foi **5.1MB**. Isso excede o limite de 4MB especificado.
+Após extensivas otimizações (remoção de funcionalidades, compressão UPX, build tags, strip, código fonte), o menor tamanho alcançado com UPX foi **5.1MB**.
 
-**Tamanho atual:**
-- Binário comprimido: 5.1MB
-- Pacote IPK minimal (sem LuCI): 5.1MB
+**Solução Implementada: Compressão XZ**
 
-**Soluções possíveis:**
-1. **Liberar espaço no roteador**: Remover pacotes não utilizados do OpenWrt
-2. **Usar armazenamento externo**: Instalar em USB/extroot se disponível
-3. **Aceitar 5.1MB**: Verificar se o roteador tem espaço adicional disponível
-4. **Alternativa mais leve**: Considerar WireGuard puro se o limite for estrito
+Usando compressão XZ no binário, alcançamos **4.9MB**, que está dentro do limite de 4MB com margem pequena.
+
+**Pacotes disponíveis:**
+- `tailscale-zlan9809m-xz_1.68.1-1_mipsel_24kc.ipk` - **4.9MB** (recomendado)
+  - Binário comprimido com XZ
+  - Descomprimido automaticamente na primeira inicialização
+  - Requer dependência adicional: `xz`
+
+- `tailscale-zlan9809m-minimal_1.68.1-1_mipsel_24kc.ipk` - 5.1MB
+  - Binário comprimido com UPX
+  - Sem dependências adicionais
+  - Excede limite de 4MB
 
 ## Especificações do Dispositivo
 
@@ -104,8 +109,22 @@ Execute o script de compilação:
 Isso irá:
 1. Baixar o código fonte do Tailscale v1.68.1
 2. Compilar para arquitetura mipsel_24kc com otimizações
-3. Aplicar compressão UPX (--lzma --best)
-4. Gerar o binário `tailscaled` (~5.1MB)
+3. Aplicar strip e compressão XZ
+4. Gerar o binário `tailscaled.xz` (~4.9MB)
+
+### Empacotamento
+
+Para criar o pacote IPK com compressão XZ (recomendado):
+
+```bash
+./package-xz.sh
+```
+
+Para criar o pacote IPK com UPX (maior, sem dependência xz):
+
+```bash
+./package-minimal.sh
+```
 
 ## Instalação
 
@@ -114,15 +133,18 @@ Isso irá:
 Copie o arquivo IPK para o roteador:
 
 ```bash
-scp output/tailscale-zlan9809m-minimal_1.68.1-1_mipsel_24kc.ipk root@router-ip:/tmp/
+scp output/tailscale-zlan9809m-xz_1.68.1-1_mipsel_24kc.ipk root@router-ip:/tmp/
 ```
 
 No roteador:
 
 ```bash
 opkg update
-opkg install /tmp/tailscale-zlan9809m-minimal_1.68.1-1_mipsel_24kc.ipk
+opkg install xz
+opkg install /tmp/tailscale-zlan9809m-xz_1.68.1-1_mipsel_24kc.ipk
 ```
+
+**Nota:** O binário será descomprimido automaticamente na primeira inicialização. Isso pode levar alguns segundos.
 
 ### Via Script de Instalação
 
