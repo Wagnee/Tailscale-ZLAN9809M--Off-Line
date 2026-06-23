@@ -78,7 +78,7 @@ echo ""
 
 # Backup da lista atual
 echo "Fazendo backup da lista de pacotes..."
-opkg list-installed > /tmp/packages_before.txt
+#opkg list-installed > /tmp/packages_before.txt
 
 # Mostrar espaço antes
 echo "Espaço antes da limpeza:"
