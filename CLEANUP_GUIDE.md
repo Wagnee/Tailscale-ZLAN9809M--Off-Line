@@ -4,6 +4,37 @@
 
 Este guia ajuda a liberar espaço no ZLAN9809M removendo pacotes não utilizados. Com Tailscale, muitos pacotes de VPN e recursos extras tornam-se desnecessários.
 
+## Especificações do Equipamento
+
+### Antes das Modificações (Fábrica)
+- **Processador**: MediaTek MT7628NN (MIPS 24Kc, 580MHz)
+- **RAM**: 64MB/128MB
+- **Flash**: 16MB total
+- **Espaço Overlay**: ~4MB disponível
+- **Funcionalidades**: WiFi, 4G/LTE, Ethernet, Bluetooth
+- **Pacotes VPN**: WireGuard, OpenVPN, StrongSwan
+- **Temas LuCI**: Múltiplos temas instalados
+- **Locales**: Múltiplos idiomas instalados
+
+### Após Modificações (Com Tailscale + Cleanup)
+- **Processador**: MediaTek MT7628NN (MIPS 24Kc, 580MHz)
+- **RAM**: 64MB/128MB (32MB livres para buffer)
+- **Flash**: 16MB total
+- **Espaço Overlay**: ~8-12MB disponível (após cleanup)
+- **Funcionalidades**: WiFi, 4G/LTE, Ethernet, Tailscale VPN
+- **Pacotes VPN**: Tailscale (substitui WireGuard, OpenVPN, StrongSwan)
+- **Temas LuCI**: 1 tema (bootstrap)
+- **Locales**: pt_BR/en_US apenas
+- **Bluetooth**: Removido (economia de espaço)
+- **Monitoramento**: Script de CPU/clock incluído
+
+### Benefícios das Modificações
+- **Mais espaço**: 8-12MB livres (vs 4MB original)
+- **VPN unificada**: Tailscale substitui múltiplas VPNs
+- **Sistema mais limpo**: Apenas pacotes necessários
+- **Monitoramento**: Controle de uso de CPU incluído
+- **Recuperável**: Script de recuperação incluído
+
 ## Pacotes VPN Removíveis (Economia Significativa)
 
 ### WireGuard e VPNs Alternativas
@@ -338,15 +369,36 @@ df -h /tmp
 
 ## Recuperação em Caso de Problemas
 
-Se remover algo necessário:
+### Script de Recuperação Automática
+
+O script `cleanup.sh` cria automaticamente um arquivo de recuperação em `/etc/tailscale_cleanup_removed.txt` com a lista de pacotes removidos.
+
+Para recuperar todos os pacotes removidos:
 
 ```bash
-# Reinstalar pacote
+# Copiar script de recuperação para o roteador
+scp tailscale_recovery.sh root@router-ip:/tmp/
+
+# Executar no roteador
+ssh root@router-ip
+cd /tmp
+chmod +x tailscale_recovery.sh
+./tailscale_recovery.sh
+```
+
+### Recuperação Manual
+
+Se remover algo necessário manualmente:
+
+```bash
+# Reinstalar pacote específico
 opkg update
 opkg install <nome-do-pacote>
 
-# Reinstalar todas as dependências
-opkg install $(opkg list-installed | awk '{print $1}')
+# Reinstalar todos os pacotes removidos
+for package in $(cat /etc/tailscale_cleanup_removed.txt); do
+    opkg install $package
+done
 ```
 
 ## Recomendações Específicas para ZLAN9809M
@@ -362,3 +414,50 @@ Com Tailscale instalado:
 **Economia realista:** 8-12MB
 
 Isso deve liberar espaço suficiente para Tailscale + LuCI + folga.
+
+## Monitoramento de CPU e Clock
+
+### Script de Monitoramento
+
+O script `cpu_monitor.sh` monitora uso de CPU, temperatura, frequência e carga do processador.
+
+```bash
+# Copiar script para o roteador
+scp cpu_monitor.sh root@router-ip:/tmp/
+
+# Executar no roteador (snapshot)
+ssh root@router-ip
+cd /tmp
+chmod +x cpu_monitor.sh
+./cpu_monitor.sh
+
+# Executar monitoramento contínuo
+./cpu_monitor.sh continuous
+```
+
+### Informações Monitoradas
+
+- **Frequência do processador**: Atual, máxima, mínima
+- **Governor de CPU**: Modo de gerenciamento de energia
+- **Temperatura**: Temperatura atual do processador
+- **Uso de CPU**: Porcentagem de uso por core
+- **Carga do sistema**: Load average
+- **Uso de memória**: RAM disponível/usada
+- **Top processos**: Processos mais intensivos
+- **Uso do Tailscale**: CPU e memória do tailscaled
+
+### Frequência do Processador (MT7628NN)
+
+O MT7628NN opera em:
+- **Frequência base**: 580MHz
+- **Governor**: Ondemand (ajusta dinamicamente)
+- **Gerenciamento de energia**: Automático
+
+O script mostra se o processador está operando em frequência máxima ou se está sendo reduzido para economizar energia.
+
+### Quando Monitorar
+
+- **Após instalação do Tailscale**: Verificar impacto no sistema
+- **Durante uso intenso**: Verificar se CPU está sobrecarregada
+- **Se houver lentidão**: Identificar processos problemáticos
+- **Para otimização**: Ajustar configurações baseado no uso

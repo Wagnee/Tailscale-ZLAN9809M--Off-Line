@@ -53,12 +53,8 @@ echo "Removendo suporte a Bluetooth..."
 echo "=========================================="
 opkg remove kmod-bluetooth bluez-daemon bluez-tools 2>/dev/null || true
 
-# Remover suporte a Wi-Fi (COMENTADO - descomente se usar apenas Ethernet)
-# echo "=========================================="
-# echo "Removendo suporte a Wi-Fi..."
-# echo "=========================================="
-# opkg remove kmod-ath9k kmod-ath9k-htc kmod-mac80211 hostapd 2>/dev/null || true
-# opkg remove wpa-supplicant wpad-basic 2>/dev/null || true
+# NOTA: Wi-Fi é mantido para funcionalidade do roteador
+# 4G/LTE também é mantido (pacotes ppp* não são removidos)
 
 # Remover suporte USB (COMENTADO - descomente se não usar USB)
 # echo "=========================================="
@@ -141,11 +137,28 @@ echo "=========================================="
 diff /tmp/packages_before.txt <(opkg list-installed) | grep "^<" | awk '{print $2}' || echo "Nenhum pacote removido"
 echo ""
 
+# Criar arquivo de recuperação
+echo "=========================================="
+echo "Criando arquivo de recuperação..."
+echo "=========================================="
+diff /tmp/packages_before.txt <(opkg list-installed) | grep "^<" | awk '{print $2}' > /etc/tailscale_cleanup_removed.txt
+echo "Lista de pacotes removidos salva em: /etc/tailscale_cleanup_removed.txt"
+echo ""
+
 # Calcular economia
 echo "=========================================="
 echo "Resumo:"
 echo "=========================================="
 echo "Limpeza concluída!"
-echo "Verifique se tudo está funcionando corretamente."
-echo "Se precisar reinstalar um pacote: opkg install <nome-do-pacote>"
+echo ""
+echo "Funcionalidades mantidas:"
+echo "- WiFi: Preservado (kmod-ath9k, hostapd, wpa-supplicant)"
+echo "- 4G/LTE: Preservado (pacotes ppp* não foram removidos)"
+echo "- Ethernet: Preservado"
+echo ""
+echo "Para reinstalar pacotes removidos:"
+echo "  /etc/tailscale_recovery.sh"
+echo ""
+echo "Para reinstalar pacote específico:"
+echo "  opkg install <nome-do-pacote>"
 echo "=========================================="
