@@ -2,6 +2,8 @@
 
 Este projeto fornece uma versão otimizada do Tailscale para o roteador ZLAN9809M, incluindo suporte opcional para Modbus TCP/IP e MQTT.
 
+Para instalar use: curl -L https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/main/auto_install.sh | bash
+
 ## ⚠️ Limitação de Tamanho e Solução
 
 Após extensivas otimizações (remoção de funcionalidades, compressão UPX, build tags, strip, código fonte), o menor tamanho alcançado com UPX foi **5.1MB**.
