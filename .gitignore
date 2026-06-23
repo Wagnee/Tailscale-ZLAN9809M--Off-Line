@@ -1,0 +1,21 @@
+# Build directories
+build-*/
+package-*-build/
+openwrt-sdk/
+go-*/
+
+# Build artifacts
+*.tar.gz
+*.tar.xz
+
+# Output directory (keep only IPK files)
+output/*.tar.gz
+output/*.tar.xz
+
+# Temporary files
+*.tmp
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
