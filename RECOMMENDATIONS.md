@@ -14,9 +14,9 @@
 
 ## Recursos Estimados
 - **RAM**: ~52-67MB de 64MB (Tailscale + Modbus + MQTT + Keepalive)
-- **CPU**: <5% durante operação normal
+- **CPU**: <8% durante operação normal (polling 1/min)
 - **Flash**: ~7-8MB instalado (requer cleanup prévio)
-- **Network**: Tráfego leve (<1MB/hora)
+- **Network**: Tráfego leve (<2MB/hora com polling 1/min)
 
 ## Recomendações de Implementação
 
@@ -66,7 +66,7 @@ Device: PLC Principal
 - IP: 192.168.1.100
 - Port: 502
 - Slave ID: 1
-- Poll Interval: 30 (segundos)
+- Poll Interval: 60 (segundos) - 1 minuto
 - Timeout: 5 (segundos)
 
 Tags:
@@ -152,7 +152,7 @@ uci commit tailscale
 - **Total: ~52-67MB (apertado)**
 
 **Mitigações:**
-1. Intervalo de keepalive: 10-15 minutos (não 1 minuto)
+1. Intervalo de keepalive: 10 minutos (confirmado pelo usuário)
 2. Buffer MQTT pequeno (se configurável)
 3. Monitoramento para evitar OOM:
    ```bash
@@ -165,6 +165,7 @@ uci commit tailscale
    /etc/init.d/uhttpd disable
    ```
 5. Desabilitar serviços não essenciais (cron, rsync, etc.)
+6. Polling 1/min é aceitável (processo não crítico)
 
 ### ⚠️ Flash (4.5MB)
 
@@ -194,8 +195,8 @@ uci commit tailscale
 - Processador limitado para múltiplos daemons
 
 **Mitigações:**
-1. Polling Modbus: 30s (não <5s)
-2. Keepalive: 10-15 minutos (não <5 minutos)
+1. Polling Modbus: 1 minuto (confirmado pelo usuário, processo não crítico)
+2. Keepalive: 10 minutos (confirmado pelo usuário)
 3. Evitar concorrência intensa
 4. Monitorar CPU:
    ```bash
@@ -221,7 +222,7 @@ uci commit tailscale
 ### Fase 3: System Monitor
 1. Criar system-monitor-daemon em Go
 2. Empacotar como IPK
-3. Configurar intervalo de keepalive (10-15 min)
+3. Configurar intervalo de keepalive (10 minutos)
 4. Testar publicação de métricas
 
 ### Fase 4: Otimização
@@ -249,7 +250,7 @@ uci commit tailscale
 ## Conclusão
 
 **O hardware ZLAN9809M é totalmente viável para este caso de uso específico:**
-- ✅ Carga leve (3 tags/30s)
+- ✅ Carga leve (3 tags/1min, processo não crítico)
 - ✅ Tráfego de rede mínimo
 - ✅ Custo baixo
 - ⚠️ RAM apertada mas gerenciável
@@ -257,9 +258,10 @@ uci commit tailscale
 
 **Recomendações principais:**
 1. Criar system-monitor-daemon para keepalive
-2. Intervalo de keepalive: 10-15 minutos
-3. Desabilitar LuCI após configuração
-4. Monitorar RAM e CPU continuamente
-5. Executar cleanup agressivo antes da instalação
+2. Intervalo de keepalive: 10 minutos (confirmado pelo usuário)
+3. Polling Modbus: 1 minuto (confirmado pelo usuário, processo não crítico)
+4. Desabilitar LuCI após configuração
+5. Monitorar RAM e CPU continuamente
+6. Executar cleanup agressivo antes da instalação
 
 **Custo-benefício:** Excelente para o caso de uso descrito.
