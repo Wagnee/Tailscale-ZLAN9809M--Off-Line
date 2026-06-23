@@ -6,6 +6,39 @@ Este guia ajuda a liberar espaço no ZLAN9809M removendo pacotes não utilizados
 
 ## Especificações do Equipamento
 
+### Hardware ZLAN9809M - Especificações Completas
+
+**Processador:**
+- Modelo: MediaTek MT7628NN
+- Arquitetura: MIPS 24Kc
+- Frequência: 580MHz
+- Cores: 1 core (single core)
+- Governor de CPU: Ondemand (ajuste dinâmico)
+- Gerenciamento de energia: Automático
+
+**Memória:**
+- RAM: 64MB ou 128MB (depende da versão)
+- Tipo: DDR2
+- Disponível para usuário: ~32MB após sistema
+- Buffer de memória: 32MB livres disponível
+
+**Armazenamento:**
+- Flash total: 16MB (NAND)
+- Overlay (armazenamento usuário): ~4MB disponível (fábrica)
+- Overlay após cleanup: ~8-12MB disponível
+- Sistema de arquivos: SquashFS (read-only) + JFFS2 (overlay)
+
+**Conectividade:**
+- WiFi: 802.11b/g/n 2.4GHz (MT7628NN integrado)
+- Ethernet: 5 portas 10/100Mbps
+- 4G/LTE: Suporte via módulo externo (PPP)
+- USB: Suporte para modems 3G/4G
+
+**Sistema:**
+- Sistema Operacional: OpenWrt
+- Kernel: Linux (MIPS)
+- Gerenciamento de pacotes: OPKG
+
 ### Antes das Modificações (Fábrica)
 - **Processador**: MediaTek MT7628NN (MIPS 24Kc, 580MHz)
 - **RAM**: 64MB/128MB
@@ -15,6 +48,7 @@ Este guia ajuda a liberar espaço no ZLAN9809M removendo pacotes não utilizados
 - **Pacotes VPN**: WireGuard, OpenVPN, StrongSwan
 - **Temas LuCI**: Múltiplos temas instalados
 - **Locales**: Múltiplos idiomas instalados
+- **Monitoramento**: Sem monitoramento de CPU
 
 ### Após Modificações (Com Tailscale + Cleanup)
 - **Processador**: MediaTek MT7628NN (MIPS 24Kc, 580MHz)
@@ -34,6 +68,26 @@ Este guia ajuda a liberar espaço no ZLAN9809M removendo pacotes não utilizados
 - **Sistema mais limpo**: Apenas pacotes necessários
 - **Monitoramento**: Controle de uso de CPU incluído
 - **Recuperável**: Script de recuperação incluído
+- **Instalação automática**: Script one-line disponível
+
+### Comparação de Memória e Armazenamento
+
+**Memória RAM:**
+- Antes: ~32MB disponível para aplicativos
+- Depois: ~32MB disponível (sem mudança)
+- Buffer para instalação: 10MB tmpfs (se necessário)
+
+**Armazenamento Flash (Overlay):**
+- Antes: ~4MB livres
+- Depois: ~8-12MB livres
+- Economia: 4-8MB ganhos
+- Tailscale + LuCI: ~5.2MB
+- Folga restante: ~3-7MB
+
+**Uso de CPU:**
+- Antes: Sem monitoramento
+- Depois: Monitoramento disponível via cpu_monitor.sh
+- Tailscale: Uso típico 5-15% CPU
 
 ## Pacotes VPN Removíveis (Economia Significativa)
 
@@ -305,6 +359,32 @@ echo "=========================================="
 ```
 
 ## Como Usar o Script
+
+### Método 1: Script Automático (One-Line)
+
+Para instalação completa automática:
+
+```bash
+curl -L https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/main/auto_install.sh | bash
+```
+
+Ou:
+
+```bash
+wget -O- https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/main/auto_install.sh | bash
+```
+
+O script `auto_install.sh` faz tudo automaticamente:
+1. Mostra especificações do hardware
+2. Mostra estado antes (memória/armazenamento)
+3. Baixa e executa cleanup.sh
+4. Instala Tailscale core
+5. Instala LuCI
+6. Configura Tailscale
+7. Mostra estado depois (memória/armazenamento)
+8. Fornece instruções finais
+
+### Método 2: Scripts Individuais
 
 ```bash
 # Copiar script para o roteador
