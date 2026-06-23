@@ -341,6 +341,12 @@ Para compilar os componentes Modbus+MQTT:
 ./build-mqtt-daemon.sh
 ```
 
+## Documentação Adicional
+
+- **[RESOURCES.md](RESOURCES.md)** - Análise detalhada de recursos de memória e armazenamento
+- **[MODBUS_MQTT_GUIDE.md](MODBUS_MQTT_GUIDE.md)** - Guia visual completo dos menus LuCI para Modbus e MQTT
+- **[MODBUS_MQTT_PLAN.md](MODBUS_MQTT_PLAN.md)** - Plano de implementação técnica do Modbus+MQTT
+
 ## Licença
 
 MIT License - Ver arquivo LICENSE para detalhes.
