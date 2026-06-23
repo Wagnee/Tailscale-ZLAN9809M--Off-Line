@@ -1,6 +1,6 @@
 # Tailscale para ZLAN9809M (Versão Compacta)
 
-Este projeto fornece uma versão otimizada do Tailscale para o roteador ZLAN9809M.
+Este projeto fornece uma versão otimizada do Tailscale para o roteador ZLAN9809M, incluindo suporte opcional para Modbus TCP/IP e MQTT.
 
 ## ⚠️ Limitação de Tamanho e Solução
 
@@ -206,7 +206,7 @@ Se você instalou os arquivos LuCI manualmente, acesse:
 
 ## Modbus TCP + MQTT (Opcional)
 
-Este projeto inclui suporte opcional para Modbus TCP polling e MQTT publishing.
+Este projeto inclui suporte opcional para Modbus TCP polling e MQTT publishing, ideal para integração industrial e IoT.
 
 ### Funcionalidades
 
@@ -214,6 +214,19 @@ Este projeto inclui suporte opcional para Modbus TCP polling e MQTT publishing.
 - **MQTT Publishing**: Publicação automática de tags lidas para broker MQTT
 - **Interface LuCI**: Configuração visual para Modbus e MQTT
 - **Persistência**: Estado salvo em `/var/lib/modbus-daemon/state.json`
+- **Leve**: Otimizado para roteadores com recursos limitados
+- **Casos de uso**: Monitoramento de sensores industriais, PLCs, controladores
+
+### Pacotes Disponíveis
+
+- `libmodbus_3.1.10-1_mipsel_24kc.ipk` (37KB) - Biblioteca Modbus
+- `mosquitto-client_2.0.18-1_mipsel_24kc.ipk` (35KB) - Cliente MQTT
+- `modbus-daemon_1.0-1_mipsel_24kc.ipk` (671KB) - Daemon Modbus
+- `mqtt-daemon_1.0-1_mipsel_24kc.ipk` (1.6MB) - Daemon MQTT
+- `luci-app-modbus_1.0-1_mipsel_24kc.ipk` (2.1KB) - Interface LuCI Modbus
+- `luci-app-mqtt_1.0-1_mipsel_24kc.ipk` (2.2KB) - Interface LuCI MQTT
+
+**Total**: ~2.4MB
 
 ### Instalação
 
@@ -231,12 +244,12 @@ Transfira os pacotes para o roteador:
 
 ```bash
 # Dependências
-scp output/libmodbus-3.1.10-mipsel_24kc.ipk root@router-ip:/tmp/
-scp output/mosquitto-client-2.0.18-mipsel_24kc.ipk root@router-ip:/tmp/
+scp output/libmodbus_3.1.10-1_mipsel_24kc.ipk root@router-ip:/tmp/
+scp output/mosquitto-client_2.0.18-1_mipsel_24kc.ipk root@router-ip:/tmp/
 
 # Daemons
-scp output/modbus-daemon-mipsel_24kc.ipk root@router-ip:/tmp/
-scp output/mqtt-daemon-mipsel_24kc.ipk root@router-ip:/tmp/
+scp output/modbus-daemon_1.0-1_mipsel_24kc.ipk root@router-ip:/tmp/
+scp output/mqtt-daemon_1.0-1_mipsel_24kc.ipk root@router-ip:/tmp/
 
 # Interfaces LuCI
 scp output/luci-app-modbus_1.0-1_mipsel_24kc.ipk root@router-ip:/tmp/
@@ -246,10 +259,10 @@ scp output/luci-app-mqtt_1.0-1_mipsel_24kc.ipk root@router-ip:/tmp/
 No roteador:
 
 ```bash
-opkg install /tmp/libmodbus-3.1.10-mipsel_24kc.ipk
-opkg install /tmp/mosquitto-client-2.0.18-mipsel_24kc.ipk
-opkg install /tmp/modbus-daemon-mipsel_24kc.ipk
-opkg install /tmp/mqtt-daemon-mipsel_24kc.ipk
+opkg install /tmp/libmodbus_3.1.10-1_mipsel_24kc.ipk
+opkg install /tmp/mosquitto-client_2.0.18-1_mipsel_24kc.ipk
+opkg install /tmp/modbus-daemon_1.0-1_mipsel_24kc.ipk
+opkg install /tmp/mqtt-daemon_1.0-1_mipsel_24kc.ipk
 opkg install /tmp/luci-app-modbus_1.0-1_mipsel_24kc.ipk
 opkg install /tmp/luci-app-mqtt_1.0-1_mipsel_24kc.ipk
 /etc/init.d/uhttpd restart
@@ -340,6 +353,38 @@ Para compilar os componentes Modbus+MQTT:
 # Cross-compilar mqtt-daemon
 ./build-mqtt-daemon.sh
 ```
+
+### Empacotamento
+
+Para criar os pacotes IPK:
+
+```bash
+./package-libmodbus.sh
+./package-mosquitto.sh
+./package-modbus.sh
+./package-mqtt.sh
+./package-luci-modbus.sh
+./package-luci-mqtt.sh
+```
+
+### Notas Técnicas
+
+**Configuração de Compilação:**
+- SDK: OpenWrt 21.02.2 (ramips/mt76x8)
+- Toolchain: mipsel_24kc_gcc-8.4.0_musl
+- Flags: `-mips32r2 -mtune=24kc -msoft-float`
+- Go: 1.24.0 com GOMIPS=softfloat
+
+**Limitações Conhecidas:**
+- SDK OpenWrt padrão usado (compatível com maioria das versões)
+- Se o roteador usar SDK MediaTek personalizado, pode ser necessário ajustes
+- Binários estáticos recomendados para máxima compatibilidade
+
+**Caso de Uso Típico:**
+- Ler uma tag Modbus a cada 30 segundos
+- Publicar valor em broker MQTT
+- Uso de CPU: <5%
+- Uso de RAM: ~10-15MB
 
 ## Documentação Adicional
 

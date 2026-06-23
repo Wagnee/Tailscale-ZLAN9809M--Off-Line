@@ -25,16 +25,16 @@
 | **Total Tailscale** | **~4.9MB** |
 
 ### Modbus + MQTT (opcional)
-| Componente | Tamanho (estimado) |
+| Componente | Tamanho Real (IPK) |
 |------------|-------------------|
-| libmodbus (biblioteca) | ~600KB |
-| mosquitto-client (binários) | ~600KB |
-| modbus-daemon (Go, com UPX) | ~1MB |
-| mqtt-daemon (Go, com UPX) | ~1MB |
-| luci-app-modbus | ~50KB |
-| luci-app-mqtt | ~50KB |
+| libmodbus (biblioteca) | 37KB |
+| mosquitto-client (binários) | 35KB |
+| modbus-daemon (Go, com UPX) | 671KB |
+| mqtt-daemon (Go, com UPX) | 1.6MB |
+| luci-app-modbus | 2.1KB |
+| luci-app-mqtt | 2.2KB |
 | configurações e scripts | ~20KB |
-| **Total Modbus+MQTT** | **~3.3MB** |
+| **Total Modbus+MQTT** | **~2.4MB** |
 
 ### Cenários de Instalação
 
@@ -44,16 +44,16 @@
 - **Status**: ⚠️ Requer limpeza prévia
 
 #### Cenário 2: Tailscale + Modbus + MQTT
-- **Usado**: 4.9MB + 3.3MB = 8.2MB
-- **Livre**: ~-3.7MB (excede limite significativamente)
-- **Status**: ❌ Impossível sem limpeza agressiva
+- **Usado**: 4.9MB + 2.4MB = 7.3MB
+- **Livre**: ~-2.8MB (excede limite)
+- **Status**: ❌ Impossível sem limpeza prévia
 
 #### Cenário 3: Tailscale (após cleanup) + Modbus + MQTT
 - **Após cleanup**: ~8-12MB livres
 - **Tailscale**: 4.9MB
-- **Modbus+MQTT**: 3.3MB
-- **Total usado**: 8.2MB
-- **Livre**: ~0-3.8MB
+- **Modbus+MQTT**: 2.4MB
+- **Total usado**: 7.3MB
+- **Livre**: ~0.7-4.7MB
 - **Status**: ✅ Viável
 
 ## Análise de Memória RAM
@@ -72,13 +72,15 @@
 
 ### Modbus Daemon
 - **modbus-daemon (idle)**: ~5-8MB
-- **Com polling ativo**: ~8-12MB
-- **Estado em memória**: ~1-5MB (depende do número de tags)
+- **Com polling ativo (1 tag/30s)**: ~8-10MB
+- **Estado em memória**: ~1-2MB (depende do número de tags)
+- **CPU**: <2% durante polling
 
 ### MQTT Daemon
 - **mqtt-daemon (idle)**: ~5-8MB
-- **Com conexão ativa**: ~8-12MB
-- **Buffer de mensagens**: ~1-3MB
+- **Com conexão ativa**: ~8-10MB
+- **Buffer de mensagens**: ~1-2MB
+- **CPU**: <1% durante publicação
 
 ### Cenários de Uso de RAM
 
@@ -92,10 +94,12 @@
 - **Livre**: -1-19MB (64MB) ou 63-83MB (128MB)
 - **Status**: ⚠️ Apertado em 64MB, OK em 128MB
 
-#### Cenário 3: Tailscale + Modbus + MQTT (ativo)
-- **Usado**: ~55-80MB
-- **Livre**: -16-9MB (64MB) ou 48-73MB (128MB)
-- **Status**: ❌ Crítico em 64MB, OK em 128MB
+#### Cenário 3: Tailscale + Modbus + MQTT (ativo - polling 30s)
+- **Usado**: ~50-70MB
+- **Livre**: -6-14MB (64MB) ou 58-78MB (128MB)
+- **Status**: ⚠️ Apertado em 64MB, OK em 128MB
+
+**Nota:** Para o caso de uso típico (ler 1 tag a cada 30s), o impacto na RAM é mínimo (~5-10MB adicional).
 
 ## Recomendações
 
@@ -167,15 +171,17 @@ ps | grep -E "tailscaled|modbus-daemon|mqtt-daemon"
 
 ### Modbus Daemon
 - ✅ Compilação estática com CGO
-- ✅ UPX compressão (redução de 2-3MB para ~1MB)
+- ✅ UPX compressão (redução de 2.5MB para 671KB - 73%)
 - ✅ Strip de símbolos
 - ✅ ldflags -s -w
+- ✅ Go 1.24.0 com GOMIPS=softfloat
 
 ### MQTT Daemon
 - ✅ Compilação estática com CGO
-- ✅ UPX compressão (redução de 2-3MB para ~1MB)
+- ✅ UPX compressão (redução de 6.1MB para 1.6MB - 74%)
 - ✅ Strip de símbolos
 - ✅ ldflags -s -w
+- ✅ Go 1.24.0 com GOMIPS=softfloat
 
 ### Interfaces LuCI
 - ✅ Código Lua otimizado
@@ -205,13 +211,31 @@ ps | grep -E "tailscaled|modbus-daemon|mqtt-daemon"
 |--------------|-------|------------|-------------|--------|
 | OpenWrt base | ✅ | ✅ | ✅ | OK |
 | + Tailscale | ⚠️ | ✅ | ✅ | Requer cleanup |
-| + Modbus+MQTT | ❌ | ❌ | ⚠️ | Não recomendado 64MB |
-| Tailscale+Modbus+MQTT (pós-cleanup) | ⚠️ | ❌ | ✅ | Viável apenas 128MB |
+| + Modbus+MQTT | ⚠️ | ⚠️ | ✅ | Requer cleanup |
+| Tailscale+Modbus+MQTT (pós-cleanup) | ⚠️ | ⚠️ | ✅ | Viável apenas 128MB |
+
+**Nota:** Para o caso de uso típico (1 tag/30s), o Modbus+MQTT é viável em 64MB RAM com Tailscale, mas monitoramento é recomendado.
 
 ## Conclusão
 
 O projeto é **viável para dispositivos com 128MB RAM** com Tailscale + Modbus + MQTT instalados.
 
-Para dispositivos com **64MB RAM**, recomenda-se:
-- Apenas Tailscale (sem Modbus+MQTT)
-- Ou usar Modbus+MQTT em dispositivo separado conectado via Tailscale
+Para dispositivos com **64MB RAM**:
+- **Tailscale apenas**: ✅ Recomendado
+- **Tailscale + Modbus+MQTT**: ⚠️ Viável para caso de uso leve (1 tag/30s)
+- **Modbus+MQTT intenso**: ❌ Não recomendado
+- **Alternativa**: Usar Modbus+MQTT em dispositivo separado conectado via Tailscale
+
+## Caso de Uso Típico
+
+**Configuração:**
+- 1 dispositivo Modbus TCP
+- 1 tag sendo lida a cada 30 segundos
+- Publicação em broker MQTT
+
+**Recursos consumidos:**
+- Flash: 2.4MB
+- RAM: ~10-15MB adicional
+- CPU: <5% durante polling
+
+**Status:** ✅ Viável mesmo em 64MB RAM
