@@ -1,0 +1,38 @@
+<%#
+Copyright 2024 Tailscale for ZLAN9809M Project
+Licensed under MIT License
+%>
+
+<div class="cbi-section-node">
+    <div class="table" id="tailscale-status">
+        <div class="tr">
+            <div class="td left" width="33%"><strong>Status:</strong></div>
+            <div class="td left" id="ts-status">Checking...</div>
+        </div>
+        <div class="tr">
+            <div class="td left" width="33%"><strong>IP Address:</strong></div>
+            <div class="td left" id="ts-ip">-</div>
+        </div>
+        <div class="tr">
+            <div class="td left" width="33%"><strong>Tailnet:</strong></div>
+            <div class="td left" id="ts-tailnet">-</div>
+        </div>
+        <div class="tr">
+            <div class="td left" width="33%"><strong>Advertised Routes:</strong></div>
+            <div class="td left" id="ts-routes">-</div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    XHR.poll(5, '<%=luci.dispatcher.build_url("admin/network/tailscale/status")%>', null,
+        function(x, info) {
+            if (info && info.status) {
+                document.getElementById('ts-status').textContent = info.status;
+                document.getElementById('ts-ip').textContent = info.ip || '-';
+                document.getElementById('ts-tailnet').textContent = info.tailnet || '-';
+                document.getElementById('ts-routes').textContent = info.routes || '-';
+            }
+        }
+    );
+</script>

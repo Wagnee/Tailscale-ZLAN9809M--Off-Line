@@ -1,0 +1,13 @@
+#!/bin/sh
+# Configuração padrão do Tailscale
+
+# Criar diretório de estado
+mkdir -p /etc/tailscale
+
+# Configurar permissões
+chmod 755 /etc/tailscale
+
+# Remover este script após execução
+rm -f /etc/uci-defaults/99-tailscale
+
+exit 0

@@ -1,0 +1,33 @@
+#!/bin/sh
+# Hotplug script para atualizar advertise routes quando DHCP muda
+
+[ "$ACTION" = "ifup" ] || exit 0
+
+# Verificar se o Tailscale está habilitado
+local enabled
+config_load 'tailscale'
+config_get enabled 'tailscale' 'enabled' '0'
+[ "$enabled" = "1" ] || exit 0
+
+# Verificar se deve auto-detectar DHCP range
+local auto_advertise
+config_get_bool auto_advertise 'tailscale' 'auto_advertise_dhcp' '1'
+[ "$auto_advertise" = "1" ] || exit 0
+
+# Obter interface LAN
+local lan_ip
+lan_ip=$(uci get network.lan.ipaddr 2>/dev/null)
+lan_netmask=$(uci get network.lan.netmask 2>/dev/null)
+
+if [ -n "$lan_ip" ] && [ -n "$lan_netmask" ]; then
+    # Calcular range da rede
+    local network
+    network=$(ipcalc.sh "$lan_ip" "$lan_netmask" | grep NETWORK | cut -d= -f2)
+    
+    # Atualizar advertise routes
+    uci set tailscale.@tailscale[0].advertise_routes="$network/24"
+    uci commit tailscale
+    
+    # Reiniciar Tailscale para aplicar
+    /etc/init.d/tailscale restart
+fi
