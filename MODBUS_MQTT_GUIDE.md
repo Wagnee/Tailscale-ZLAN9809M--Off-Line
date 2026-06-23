@@ -21,59 +21,98 @@ Este guia mostra como usar as interfaces LuCI para configurar Modbus TCP e MQTT 
 ### Estrutura do Menu Modbus
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ LuCI → Services → Modbus TCP                            │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  Modbus TCP                                             │
-│  Configure Modbus TCP devices for polling and          │
-│  data collection.                                      │
-│                                                         │
-│  ┌───────────────────────────────────────────────────┐ │
-│  │ Modbus Devices                                    │ │
-│  │                                                   │ │
-│  │ [✓] Enable  [Name] [IP] [Port] [Slave ID]       │ │
-│  │                                                   │ │
-│  │ Device1: PLC Principal                            │ │
-│  │   Enabled: ✓                                      │ │
-│  │   IP: 192.168.1.100                              │ │
-│  │   Port: 502                                      │ │
-│  │   Slave ID: 1                                    │ │
-│  │   Poll Interval: 5s                              │ │
-│  │   Timeout: 3s                                    │ │
-│  │   [Edit] [Delete]                                │ │
-│  │                                                   │ │
-│  │ [+ Add Device]                                    │ │
-│  └───────────────────────────────────────────────────┘ │
-│                                                         │
-│  ┌───────────────────────────────────────────────────┐ │
-│  │ Modbus Tags                                       │ │
-│  │                                                   │ │
-│  │ [Device] [Name] [Address] [Type] [Scale] [Offset]│ │
-│  │                                                   │ │
-│  │ Tag1: Temperatura                                 │ │
-│  │   Device: Device1                                 │ │
-│  │   Address: 40001                                  │ │
-│  │   Type: Holding Register                         │ │
-│  │   Scale: 0.1                                      │ │
-│  │   Offset: 0                                       │ │
-│  │   [Edit] [Delete]                                │ │
-│  │                                                   │ │
-│  │ [+ Add Tag]                                      │ │
-│  └───────────────────────────────────────────────────┘ │
-│                                                         │
-│  ┌───────────────────────────────────────────────────┐ │
-│  │ Status                                            │ │
-│  │                                                   │ │
-│  │ Device         IP:Port    Slave ID    Status     │ │
-│  │ ────────────────────────────────────────────────  │ │
-│  │ PLC Principal  192.168.1.100:502  1    Connected │ │
-│  │                                                   │ │
-│  └───────────────────────────────────────────────────┘ │
-│                                                         │
-│                                    [Save] [Save & Apply]│
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│ LuCI → Services → Modbus TCP                                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ╔══════════════════════════════════════════════════════════════════╗ │
+│  ║ Modbus TCP                                                       ║ │
+│  ║ Configure Modbus TCP devices for polling and data collection.    ║ │
+│  ╚══════════════════════════════════════════════════════════════════╝ │
+│                                                                     │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ Modbus Devices                                                  │ │
+│  │                                                               │ │
+│  │ ┌─────────────────────────────────────────────────────────┐  │ │
+│  │ │ Device Configuration                                     │  │ │
+│  │ │                                                         │  │ │
+│  │ │ Enable:     [✓]                                        │  │ │
+│  │ │ Name:       [PLC Principal                  ]           │  │ │
+│  │ │ IP:         [192.168.1.100                 ]           │  │ │
+│  │ │ Port:       [502                           ]           │  │ │
+│  │ │ Slave ID:   [1                             ]           │  │ │
+│  │ │ Poll Int:   [60 (seconds)                 ]           │  │ │
+│  │ │ Timeout:    [5 (seconds)                  ]           │  │ │
+│  │ │                                                         │  │ │
+│  │ │ [Save] [Reset]                                            │  │ │
+│  │ └─────────────────────────────────────────────────────────┘  │ │
+│  │                                                               │ │
+│  │ ┌─────────────────────────────────────────────────────────┐  │ │
+│  │ │ Device List                                              │  │ │
+│  │ │                                                         │  │ │
+│  │ │ ✓ PLC Principal                                         │  │ │
+│  │ │   IP: 192.168.1.100:502  Slave: 1  Poll: 60s           │  │ │
+│  │ │   [Edit] [Delete]                                        │  │ │
+│  │ │                                                         │  │ │
+│  │ │ [+ Add Device]                                           │  │ │
+│  │ └─────────────────────────────────────────────────────────┘  │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ Modbus Tags                                                    │ │
+│  │                                                               │ │
+│  │ ┌─────────────────────────────────────────────────────────┐  │ │
+│  │ │ Tag Configuration                                        │  │ │
+│  │ │                                                         │  │ │
+│  │ │ Device:     [PLC Principal                ▼]           │  │ │
+│  │ │ Name:       [Temperatura                   ]           │  │ │
+│  │ │ Address:    [40001                         ]           │  │ │
+│  │ │ Type:       [Holding Register              ▼]           │  │ │
+│  │ │ Scale:      [0.1                           ]           │  │ │
+│  │ │ Offset:     [0                             ]           │  │ │
+│  │ │                                                         │  │ │
+│  │ │ [Save] [Reset]                                            │  │ │
+│  │ └─────────────────────────────────────────────────────────┘  │ │
+│  │                                                               │ │
+│  │ ┌─────────────────────────────────────────────────────────┐  │ │
+│  │ │ Tag List                                                 │  │ │
+│  │ │                                                         │  │ │
+│  │ │ • Temperatura (PLC Principal)                           │  │ │
+│  │ │   Addr: 40001  Type: Holding  Scale: 0.1  Offset: 0    │  │ │
+│  │ │   [Edit] [Delete]                                        │  │ │
+│  │ │                                                         │  │ │
+│  │ │ • Pressão (PLC Principal)                                │  │ │
+│  │ │   Addr: 40002  Type: Holding  Scale: 0.01 Offset: 0    │  │ │
+│  │ │   [Edit] [Delete]                                        │  │ │
+│  │ │                                                         │  │ │
+│  │ │ • Umidade (PLC Principal)                                │  │ │
+│  │ │   Addr: 40003  Type: Holding  Scale: 1.0  Offset: 0    │  │ │
+│  │ │   [Edit] [Delete]                                        │  │ │
+│  │ │                                                         │  │ │
+│  │ │ [+ Add Tag]                                              │  │ │
+│  │ └─────────────────────────────────────────────────────────┘  │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ Status                                                        │ │
+│  │                                                               │ │
+│  │ Device           IP:Port         Slave    Poll    Status      │ │
+│  │ ───────────────────────────────────────────────────────────── │ │
+│  │ PLC Principal    192.168.1.100:502  1       60s     🟢 Connected│ │
+│  │                                                               │ │
+│  │ Last Poll: 2 seconds ago                                    │ │
+│  │ Tags Read: 3/3 Success                                      │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│                                                [Save] [Save & Apply] │
+└─────────────────────────────────────────────────────────────────────┘
 ```
+
+**Nota:** Após testar no hardware real, você pode adicionar screenshots reais aqui.
+Para tirar screenshots do LuCI:
+1. Acesse o roteador via SSH
+2. Execute: `opkg install luci-app-screenshot` (se disponível)
+3. Ou use ferramenta de screenshot do navegador ao acessar LuCI
 
 ### Adicionando um Dispositivo Modbus
 
@@ -143,48 +182,73 @@ Este guia mostra como usar as interfaces LuCI para configurar Modbus TCP e MQTT 
 ### Estrutura do Menu MQTT
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ LuCI → Services → MQTT Client                            │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  MQTT Client                                            │
-│  Configure MQTT client to publish Modbus tags to        │
-│  an MQTT broker.                                        │
-│                                                         │
-│  ┌───────────────────────────────────────────────────┐ │
-│  │ MQTT Configuration                                │ │
-│  │                                                   │ │
-│  │ [✓] Enable                                       │ │
-│  │                                                   │ │
-│  │ Broker URL: [mqtt.eclipseprojects.io        ]     │ │
-│  │ Port:       [1883                             ]   │ │
-│  │ Username:   [                                 ]   │ │
-│  │ Password:   [•••••••••••••••                  ]   │ │
-│  │ Client ID:  [zlan9809m                        ]   │ │
-│  │ Keep Alive: [60                               ]   │ │
-│  │ Topic Prefix: [zlan9809m                      ]   │ │
-│  │                                                   │ │
-│  │ Broker URL: Hostname ou IP do broker MQTT       │ │
-│  │ Port: Porta TCP (padrão: 1883)                  │ │
-│  │ Username/Password: Autenticação (opcional)     │ │
-│  │ Client ID: Identificador único deste cliente   │ │
-│  │ Keep Alive: Intervalo de keep-alive em segundos │ │
-│  │ Topic Prefix: Prefixo para tópicos MQTT         │ │
-│  └───────────────────────────────────────────────────┘ │
-│                                                         │
-│  ┌───────────────────────────────────────────────────┐ │
-│  │ Status                                            │ │
-│  │                                                   │ │
-│  │ Status:        [🟢 Connected]                     │ │
-│  │ Broker:        mqtt.eclipseprojects.io            │ │
-│  │ Port:          1883                              │ │
-│  │ Enabled:       Yes                               │ │
-│  │                                                   │ │
-│  └───────────────────────────────────────────────────┘ │
-│                                                         │
-│                                    [Save] [Save & Apply]│
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│ LuCI → Services → MQTT Client                                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ╔══════════════════════════════════════════════════════════════════╗ │
+│  ║ MQTT Client                                                      ║ │
+│  ║ Configure MQTT client to publish Modbus tags to an MQTT broker.   ║ │
+│  ╚══════════════════════════════════════════════════════════════════╝ │
+│                                                                     │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ MQTT Configuration                                              │ │
+│  │                                                               │ │
+│  │ ┌─────────────────────────────────────────────────────────┐  │ │
+│  │ │ Connection Settings                                     │  │ │
+│  │ │                                                         │  │ │
+│  │ │ Enable:        [✓]                                     │  │ │
+│  │ │ Broker URL:    [mqtt.eclipseprojects.io        ]       │  │ │
+│  │ │ Port:          [1883                           ]       │  │ │
+│  │ │ Username:      [                                ]       │  │ │
+│  │ │ Password:      [•••••••••••••••                ]       │  │ │
+│  │ │ Client ID:     [zlan9809m                       ]       │  │ │
+│  │ │ Keep Alive:    [60 (seconds)                   ]       │  │ │
+│  │ │ Topic Prefix:  [zlan9809m                       ]       │  │ │
+│  │ │                                                         │  │ │
+│  │ │ Broker URL: Hostname ou IP do broker MQTT              │  │ │
+│  │ │ Port: Porta TCP (padrão: 1883, 8883 para TLS)          │  │ │
+│  │ │ Username/Password: Autenticação (opcional)            │  │ │
+│  │ │ Client ID: Identificador único deste cliente           │  │ │
+│  │ │ Keep Alive: Intervalo de keep-alive em segundos       │  │ │
+│  │ │ Topic Prefix: Prefixo para tópicos MQTT               │  │ │
+│  │ │                                                         │  │ │
+│  │ │ [Save] [Reset]                                            │  │ │
+│  │ └─────────────────────────────────────────────────────────┘  │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ Status                                                        │ │
+│  │                                                               │ │
+│  │ ┌─────────────────────────────────────────────────────────┐  │ │
+│  │ │ Connection Status                                      │  │ │
+│  │ │                                                         │  │ │
+│  │ │ Status:        🟢 Connected                            │  │ │
+│  │ │ Broker:        mqtt.eclipseprojects.io                  │  │ │
+│  │ │ Port:          1883                                    │  │ │
+│  │ │ Client ID:     zlan9809m                               │  │ │
+│  │ │ Connected:     2 minutes ago                           │  │ │
+│  │ │ Enabled:       Yes                                     │  │ │
+│  │ │                                                         │  │ │
+│  │ │ Messages Published: 156                                 │  │ │
+│  │ │ Messages Failed: 0                                     │  │ │
+│  │ └─────────────────────────────────────────────────────────┘  │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ Topic Preview                                                 │ │
+│  │                                                               │ │
+│  │ Active Topics:                                                │ │
+│  │ • zlan9809m/PLC Principal/Temperatura                        │ │
+│  │ • zlan9809m/PLC Principal/Pressão                            │ │
+│  │ • zlan9809m/PLC Principal/Umidade                            │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│                                                [Save] [Save & Apply] │
+└─────────────────────────────────────────────────────────────────────┘
 ```
+
+**Nota:** Após testar no hardware real, você pode adicionar screenshots reais aqui.
 
 ### Configurando o Broker MQTT
 
@@ -287,6 +351,53 @@ O payload é um JSON com o seguinte formato:
 │ projects.io  │
 └──────────────┘
 ```
+
+## Screenshots Reais (Para Adicionar Após Teste)
+
+Após testar no hardware real, adicione screenshots das telas de configuração aqui.
+
+### Tela de Configuração Modbus
+```
+[SCREENSHOT: LuCI → Services → Modbus TCP]
+- Mostrar formulário de configuração de dispositivo
+- Mostrar lista de tags configuradas
+- Mostrar status de conexão
+```
+
+### Tela de Configuração MQTT
+```
+[SCREENSHOT: LuCI → Services → MQTT Client]
+- Mostrar formulário de configuração de broker
+- Mostrar status de conexão
+- Mostrar tópicos ativos
+```
+
+### Tela de Status do Sistema
+```
+[SCREENSHOT: LuCI → Status → Overview]
+- Mostrar uso de RAM/CPU
+- Mostrar status dos serviços
+- Mostrar conexões de rede
+```
+
+### Como Adicionar Screenshots
+
+**Método 1: Screenshot do Navegador**
+1. Acesse LuCI no navegador
+2. Use ferramenta de screenshot (Snipping Tool, etc.)
+3. Salve como PNG/JPG
+4. Adicione ao repositório em `docs/screenshots/`
+5. Atualize este documento com as imagens
+
+**Método 2: Via SSH (se disponível)**
+```bash
+# Se o LuCI tiver suporte a screenshot
+opkg install luci-app-screenshot
+# Acesse LuCI → System → Screenshot
+```
+
+**Método 3: Emulação/Virtualização**
+Se você tiver acesso ao firmware em emulador, pode capturar screenshots de lá.
 
 ## Testando a Integração
 
