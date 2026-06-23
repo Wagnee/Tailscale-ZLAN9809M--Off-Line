@@ -72,10 +72,10 @@ curl -L "$REPO_URL/output/luci-app-tailscale-zlan9809m_1.68.1-1_mipsel_24kc.ipk"
 # Baixar pacotes Modbus+MQTT se solicitado
 if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
     echo "Baixando pacotes Modbus+MQTT..."
-    curl -L "$REPO_URL/output/libmodbus-3.1.10-mipsel_24kc.ipk" -o libmodbus.ipk || echo "Pacote libmodbus não encontrado"
-    curl -L "$REPO_URL/output/mosquitto-client-2.0.18-mipsel_24kc.ipk" -o mosquitto-client.ipk || echo "Pacote mosquitto-client não encontrado"
-    curl -L "$REPO_URL/output/modbus-daemon-mipsel_24kc.ipk" -o modbus-daemon.ipk || echo "Pacote modbus-daemon não encontrado"
-    curl -L "$REPO_URL/output/mqtt-daemon-mipsel_24kc.ipk" -o mqtt-daemon.ipk || echo "Pacote mqtt-daemon não encontrado"
+    curl -L "$REPO_URL/output/libmodbus_3.1.10-1_mipsel_24kc.ipk" -o libmodbus.ipk || echo "Pacote libmodbus não encontrado"
+    curl -L "$REPO_URL/output/mosquitto-client_2.0.18-1_mipsel_24kc.ipk" -o mosquitto-client.ipk || echo "Pacote mosquitto-client não encontrado"
+    curl -L "$REPO_URL/output/modbus-daemon_1.0-1_mipsel_24kc.ipk" -o modbus-daemon.ipk || echo "Pacote modbus-daemon não encontrado"
+    curl -L "$REPO_URL/output/mqtt-daemon_1.0-1_mipsel_24kc.ipk" -o mqtt-daemon.ipk || echo "Pacote mqtt-daemon não encontrado"
     curl -L "$REPO_URL/output/luci-app-modbus_1.0-1_mipsel_24kc.ipk" -o luci-modbus.ipk || echo "Pacote luci-modbus não encontrado"
     curl -L "$REPO_URL/output/luci-app-mqtt_1.0-1_mipsel_24kc.ipk" -o luci-mqtt.ipk || echo "Pacote luci-mqtt não encontrado"
 fi
