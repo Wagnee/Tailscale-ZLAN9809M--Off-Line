@@ -1,0 +1,24 @@
+#!/bin/sh /etc/rc.common
+# Copyright 2024 Tailscale for ZLAN9809M Project
+# Licensed under MIT License
+
+START=95
+STOP=15
+
+USE_PROCD=1
+
+start_service() {
+    # Carregar configuração de CPU governor
+    if [ -f /usr/bin/cpu-governor-manager.sh ]; then
+        /usr/bin/cpu-governor-manager.sh load 2>/dev/null || true
+    fi
+}
+
+stop_service() {
+    # Não é necessário fazer nada ao parar
+    # A configuração persiste
+}
+
+boot() {
+    start_service
+}

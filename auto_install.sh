@@ -38,6 +38,13 @@ echo "Recomendação: Use SSH para economizar RAM"
 read -p "Instalar Terminal Web? (y/N): " INSTALL_TERMINAL
 INSTALL_TERMINAL=$(echo "$INSTALL_TERMINAL" | tr '[:upper:]' '[:lower:]')
 
+# Perguntar sobre CPU Management
+echo "Deseja instalar também o CPU Management (LuCI)?"
+echo "Isso adicionará controle de CPU governor e monitoramento de temperatura"
+echo "Recomendação: conservative/powersave para racks de automação (ambiente quente)"
+read -p "Instalar CPU Management? (y/N): " INSTALL_CPU_MGMT
+INSTALL_CPU_MGMT=$(echo "$INSTALL_CPU_MGMT" | tr '[:upper:]' '[:lower:]')
+
 # Mostrar especificações do hardware
 echo "=========================================="
 echo "Especificações do Hardware - ZLAN9809M"
@@ -112,6 +119,12 @@ if [ "$INSTALL_AUTO_UPDATE" = "y" ]; then
     $DOWNLOAD_CMD "$REPO_URL/scripts/auto-update-daemon.sh" $DOWNLOAD_OPTS auto-update-daemon.sh || echo "Daemon não encontrado"
     $DOWNLOAD_CMD "$REPO_URL/scripts/auto-update-whitelist.conf" $DOWNLOAD_OPTS auto-update-whitelist.conf || echo "Whitelist não encontrado"
     $DOWNLOAD_CMD "$REPO_URL/scripts/install-auto-update-daemon.sh" $DOWNLOAD_OPTS install-auto-update-daemon.sh || echo "Script de instalação não encontrado"
+fi
+
+# Baixar CPU Management se solicitado
+if [ "$INSTALL_CPU_MGMT" = "y" ]; then
+    echo "Baixando CPU Management..."
+    $DOWNLOAD_CMD "$REPO_URL/cpu-governor-manager.sh" $DOWNLOAD_OPTS cpu-governor-manager.sh || echo "CPU Governor Manager não encontrado"
 fi
 
 # Verificar se os pacotes foram baixados
@@ -249,6 +262,44 @@ EOF
     echo "Logs: tail -f /var/log/auto-update-daemon.log"
 fi
 
+# Instalar CPU Management se solicitado
+if [ "$INSTALL_CPU_MGMT" = "y" ]; then
+    echo "=========================================="
+    echo "Instalando CPU Management..."
+    echo "=========================================="
+    
+    # Copiar script de gerenciamento
+    if [ -f cpu-governor-manager.sh ]; then
+        cp cpu-governor-manager.sh /usr/bin/
+        chmod +x /usr/bin/cpu-governor-manager.sh
+        echo "Script de gerenciamento copiado para /usr/bin/"
+    fi
+    
+    # Copiar init script
+    cp files/etc/init.d/cpufreq-manager /etc/init.d/
+    chmod +x /etc/init.d/cpufreq-manager
+    echo "Init script copiado para /etc/init.d/"
+    
+    # Criar diretório para módulo LuCI
+    mkdir -p /usr/lib/lua/luci/controller
+    mkdir -p /usr/lib/lua/luci/model/cbi
+    mkdir -p /usr/lib/lua/luci/view/cpufreq
+    
+    # Copiar módulo LuCI
+    cp luci/cpufreq/luasrc/controller/cpufreq.lua /usr/lib/lua/luci/controller/
+    cp luci/cpufreq/luasrc/model/cbi/cpufreq.lua /usr/lib/lua/luci/model/cbi/
+    cp luci/cpufreq/luasrc/view/cpufreq/*.htm /usr/lib/lua/luci/view/cpufreq/
+    
+    # Habilitar serviço
+    /etc/init.d/cpufreq-manager enable
+    
+    # Reiniciar LuCI
+    /etc/init.d/uhttpd restart
+    
+    echo "CPU Management instalado!"
+    echo "Acesse em: LuCI → Services → CPU Management"
+fi
+
 # Configurar Tailscale
 echo "=========================================="
 echo "Configurando Tailscale..."
@@ -318,6 +369,9 @@ if [ "$INSTALL_AUTO_UPDATE" = "y" ]; then
 fi
 if [ "$INSTALL_TERMINAL" = "y" ]; then
     echo "- Terminal Web instalado (acesso via LuCI, +2-3MB RAM)"
+fi
+if [ "$INSTALL_CPU_MGMT" = "y" ]; then
+    echo "- CPU Management instalado (controle de governor e temperatura)"
 fi
 echo ""
 echo "Acesse LuCI:"

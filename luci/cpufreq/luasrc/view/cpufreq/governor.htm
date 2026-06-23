@@ -1,0 +1,17 @@
+<%+header%>
+<h2 name="content"><%:CPU Governor%></h2>
+<div class="cbi-section">
+    <div class="cbi-section-descr">
+        <span id="current-governor">Loading...</span>
+    </div>
+</div>
+<script type="text/javascript">
+    XHR.poll(5, '<%=luci.dispatcher.build_url("admin/services/cpufreq/governor")%>', null,
+        function(x, data) {
+            if (data && data.governor) {
+                document.getElementById('current-governor').innerHTML = 
+                    '<strong>' + data.governor + '</strong>';
+            }
+        }
+    );
+</script>

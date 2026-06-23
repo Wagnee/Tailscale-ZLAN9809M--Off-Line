@@ -1,0 +1,17 @@
+<%+header%>
+<h2 name="content"><%:CPU Temperature%></h2>
+<div class="cbi-section">
+    <div class="cbi-section-descr">
+        <span id="current-temperature">Loading...</span>
+    </div>
+</div>
+<script type="text/javascript">
+    XHR.poll(5, '<%=luci.dispatcher.build_url("admin/services/cpufreq/temperature")%>', null,
+        function(x, data) {
+            if (data && data.temperature) {
+                document.getElementById('current-temperature').innerHTML = 
+                    '<strong>' + data.temperature + '</strong>';
+            }
+        }
+    );
+</script>

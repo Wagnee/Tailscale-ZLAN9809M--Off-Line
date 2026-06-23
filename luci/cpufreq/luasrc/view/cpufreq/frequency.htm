@@ -1,0 +1,17 @@
+<%+header%>
+<h2 name="content"><%:Current Frequency%></h2>
+<div class="cbi-section">
+    <div class="cbi-section-descr">
+        <span id="current-frequency">Loading...</span>
+    </div>
+</div>
+<script type="text/javascript">
+    XHR.poll(5, '<%=luci.dispatcher.build_url("admin/services/cpufreq/frequency")%>', null,
+        function(x, data) {
+            if (data && data.frequency) {
+                document.getElementById('current-frequency').innerHTML = 
+                    '<strong>' + data.frequency + '</strong>';
+            }
+        }
+    );
+</script>
