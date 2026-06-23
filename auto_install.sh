@@ -2,7 +2,7 @@
 # Script Master de Instalação Automática - Tailscale para ZLAN9809M
 # Executa tudo automaticamente: limpeza, instalação e configuração
 # Uso: curl -L https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/main/auto_install.sh | bash
-# Ou: wget -O- https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/main/auto_install.sh | bash
+# Ou: wget -qO- https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/main/auto_install.sh | bash
 
 set -e
 
@@ -53,6 +53,18 @@ TMPDIR="/tmp/tailscale_auto_install"
 mkdir -p "$TMPDIR"
 cd "$TMPDIR"
 
+# Detectar curl ou wget
+if command -v curl >/dev/null 2>&1; then
+    DOWNLOAD_CMD="curl -L"
+    DOWNLOAD_OPTS="-o"
+elif command -v wget >/dev/null 2>&1; then
+    DOWNLOAD_CMD="wget -q"
+    DOWNLOAD_OPTS="-O"
+else
+    echo "ERRO: curl ou wget não encontrado. Instale um deles primeiro."
+    exit 1
+fi
+
 # Baixar scripts necessários
 echo "=========================================="
 echo "Baixando scripts..."
@@ -61,23 +73,23 @@ REPO_URL="https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line
 
 # Baixar cleanup.sh
 echo "Baixando cleanup.sh..."
-curl -L "$REPO_URL/cleanup.sh" -o cleanup.sh
+$DOWNLOAD_CMD "$REPO_URL/cleanup.sh" $DOWNLOAD_OPTS cleanup.sh
 chmod +x cleanup.sh
 
 # Baixar pacotes IPK (se disponíveis no repositório)
 echo "Baixando pacotes IPK..."
-curl -L "$REPO_URL/output/tailscale-zlan9809m-core_1.68.1-1_mipsel_24kc.ipk" -o tailscale-core.ipk || echo "Pacote core não encontrado no repositório"
-curl -L "$REPO_URL/output/luci-app-tailscale-zlan9809m_1.68.1-1_mipsel_24kc.ipk" -o tailscale-luci.ipk || echo "Pacote LuCI não encontrado no repositório"
+$DOWNLOAD_CMD "$REPO_URL/output/tailscale-zlan9809m-core_1.68.1-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS tailscale-core.ipk || echo "Pacote core não encontrado no repositório"
+$DOWNLOAD_CMD "$REPO_URL/output/luci-app-tailscale-zlan9809m_1.68.1-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS tailscale-luci.ipk || echo "Pacote LuCI não encontrado no repositório"
 
 # Baixar pacotes Modbus+MQTT se solicitado
 if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
     echo "Baixando pacotes Modbus+MQTT..."
-    curl -L "$REPO_URL/output/libmodbus_3.1.10-1_mipsel_24kc.ipk" -o libmodbus.ipk || echo "Pacote libmodbus não encontrado"
-    curl -L "$REPO_URL/output/mosquitto-client_2.0.18-1_mipsel_24kc.ipk" -o mosquitto-client.ipk || echo "Pacote mosquitto-client não encontrado"
-    curl -L "$REPO_URL/output/modbus-daemon_1.0-1_mipsel_24kc.ipk" -o modbus-daemon.ipk || echo "Pacote modbus-daemon não encontrado"
-    curl -L "$REPO_URL/output/mqtt-daemon_1.0-1_mipsel_24kc.ipk" -o mqtt-daemon.ipk || echo "Pacote mqtt-daemon não encontrado"
-    curl -L "$REPO_URL/output/luci-app-modbus_1.0-1_mipsel_24kc.ipk" -o luci-modbus.ipk || echo "Pacote luci-modbus não encontrado"
-    curl -L "$REPO_URL/output/luci-app-mqtt_1.0-1_mipsel_24kc.ipk" -o luci-mqtt.ipk || echo "Pacote luci-mqtt não encontrado"
+    $DOWNLOAD_CMD "$REPO_URL/output/libmodbus_3.1.10-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS libmodbus.ipk || echo "Pacote libmodbus não encontrado"
+    $DOWNLOAD_CMD "$REPO_URL/output/mosquitto-client_2.0.18-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS mosquitto-client.ipk || echo "Pacote mosquitto-client não encontrado"
+    $DOWNLOAD_CMD "$REPO_URL/output/modbus-daemon_1.0-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS modbus-daemon.ipk || echo "Pacote modbus-daemon não encontrado"
+    $DOWNLOAD_CMD "$REPO_URL/output/mqtt-daemon_1.0-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS mqtt-daemon.ipk || echo "Pacote mqtt-daemon não encontrado"
+    $DOWNLOAD_CMD "$REPO_URL/output/luci-app-modbus_1.0-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS luci-modbus.ipk || echo "Pacote luci-modbus não encontrado"
+    $DOWNLOAD_CMD "$REPO_URL/output/luci-app-mqtt_1.0-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS luci-mqtt.ipk || echo "Pacote luci-mqtt não encontrado"
 fi
 
 # Verificar se os pacotes foram baixados
