@@ -7,7 +7,7 @@ set -e
 VERSION="3.1.10"
 BUILD_DIR="$(pwd)/build-libmodbus"
 OUTPUT_DIR="$(pwd)/output"
-TOOLCHAIN_URL="https://downloads.openwrt.org/releases/22.03.5/targets/ramips/mt76x8/OpenWrt-SDK-22.03.5-ramips-mt76x8_gcc-11.2.0_musl.Linux-x86_64.tar.xz"
+TOOLCHAIN_URL="https://archive.openwrt.org/releases/22.03.5/targets/ramips/mt76x8/OpenWrt-SDK-22.03.5-ramips-mt76x8_gcc-11.2.0_musl.Linux-x86_64.tar.xz"
 
 echo "=========================================="
 echo "Cross-compilando libmodbus para MIPS 24Kc"
@@ -25,7 +25,7 @@ mkdir -p "${OUTPUT_DIR}"
 SDK_DIR="$(pwd)/openwrt-sdk"
 if [ ! -d "${SDK_DIR}" ]; then
     echo "Baixando OpenWrt SDK..."
-    wget -O openwrt-sdk.tar.xz "${TOOLCHAIN_URL}"
+    wget --no-check-certificate -O openwrt-sdk.tar.xz "${TOOLCHAIN_URL}"
     tar -xf openwrt-sdk.tar.xz
     mv OpenWrt-SDK-* "${SDK_DIR}"
     rm openwrt-sdk.tar.xz
@@ -45,7 +45,7 @@ export LDFLAGS="-s"
 # Baixar libmodbus
 echo "Baixando libmodbus ${VERSION}..."
 cd "${BUILD_DIR}"
-wget "https://github.com/stephane/libmodbus/archive/refs/tags/v${VERSION}.tar.gz"
+wget --no-check-certificate "https://github.com/stephane/libmodbus/archive/refs/tags/v${VERSION}.tar.gz"
 tar -xf "v${VERSION}.tar.gz"
 cd "libmodbus-${VERSION}"
 

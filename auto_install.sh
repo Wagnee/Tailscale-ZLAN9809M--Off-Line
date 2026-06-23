@@ -18,6 +18,12 @@ if [ ! -f /etc/openwrt_release ]; then
     exit 1
 fi
 
+# Perguntar sobre Modbus+MQTT
+echo "Deseja instalar também Modbus TCP + MQTT?"
+echo "Isso adicionará funcionalidades de polling Modbus e publicação MQTT"
+read -p "Instalar Modbus+MQTT? (y/N): " INSTALL_MODBUS_MQTT
+INSTALL_MODBUS_MQTT=$(echo "$INSTALL_MODBUS_MQTT" | tr '[:upper:]' '[:lower:]')
+
 # Mostrar especificações do hardware
 echo "=========================================="
 echo "Especificações do Hardware - ZLAN9809M"
@@ -63,6 +69,17 @@ echo "Baixando pacotes IPK..."
 curl -L "$REPO_URL/output/tailscale-zlan9809m-core_1.68.1-1_mipsel_24kc.ipk" -o tailscale-core.ipk || echo "Pacote core não encontrado no repositório"
 curl -L "$REPO_URL/output/luci-app-tailscale-zlan9809m_1.68.1-1_mipsel_24kc.ipk" -o tailscale-luci.ipk || echo "Pacote LuCI não encontrado no repositório"
 
+# Baixar pacotes Modbus+MQTT se solicitado
+if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
+    echo "Baixando pacotes Modbus+MQTT..."
+    curl -L "$REPO_URL/output/libmodbus-3.1.10-mipsel_24kc.ipk" -o libmodbus.ipk || echo "Pacote libmodbus não encontrado"
+    curl -L "$REPO_URL/output/mosquitto-client-2.0.18-mipsel_24kc.ipk" -o mosquitto-client.ipk || echo "Pacote mosquitto-client não encontrado"
+    curl -L "$REPO_URL/output/modbus-daemon-mipsel_24kc.ipk" -o modbus-daemon.ipk || echo "Pacote modbus-daemon não encontrado"
+    curl -L "$REPO_URL/output/mqtt-daemon-mipsel_24kc.ipk" -o mqtt-daemon.ipk || echo "Pacote mqtt-daemon não encontrado"
+    curl -L "$REPO_URL/output/luci-app-modbus_1.0-1_mipsel_24kc.ipk" -o luci-modbus.ipk || echo "Pacote luci-modbus não encontrado"
+    curl -L "$REPO_URL/output/luci-app-mqtt_1.0-1_mipsel_24kc.ipk" -o luci-mqtt.ipk || echo "Pacote luci-mqtt não encontrado"
+fi
+
 # Verificar se os pacotes foram baixados
 if [ ! -f tailscale-core.ipk ]; then
     echo "=========================================="
@@ -103,6 +120,32 @@ if [ -f tailscale-luci.ipk ]; then
     echo "=========================================="
     opkg install tailscale-luci.ipk
     /etc/init.d/uhttpd restart
+fi
+
+# Instalar Modbus+MQTT se solicitado
+if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
+    echo "=========================================="
+    echo "Instalando Modbus+MQTT..."
+    echo "=========================================="
+    
+    # Instalar dependências
+    opkg install libmodbus.ipk 2>/dev/null || echo "libmodbus não encontrado, continuando..."
+    opkg install mosquitto-client.ipk 2>/dev/null || echo "mosquitto-client não encontrado, continuando..."
+    
+    # Instalar daemons
+    opkg install modbus-daemon.ipk 2>/dev/null || echo "modbus-daemon não encontrado"
+    opkg install mqtt-daemon.ipk 2>/dev/null || echo "mqtt-daemon não encontrado"
+    
+    # Instalar interfaces LuCI
+    opkg install luci-modbus.ipk 2>/dev/null || echo "luci-modbus não encontrado"
+    opkg install luci-mqtt.ipk 2>/dev/null || echo "luci-mqtt não encontrado"
+    
+    # Reiniciar LuCI se instalou interfaces
+    if [ -f luci-modbus.ipk ] || [ -f luci-mqtt.ipk ]; then
+        /etc/init.d/uhttpd restart
+    fi
+    
+    echo "Modbus+MQTT instalado!"
 fi
 
 # Configurar Tailscale
@@ -166,13 +209,26 @@ echo "- Tailscale instalado e configurado"
 echo "- LuCI instalada (interface web)"
 echo "- WiFi e 4G/LTE preservados"
 echo "- Bluetooth removido (economia de espaço)"
+if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
+    echo "- Modbus+MQTT instalado (polling e publicação)"
+fi
 echo ""
 echo "Acesse LuCI:"
 echo "  http://$(uci get network.lan.ipaddr)/cgi-bin/luci/admin/network/tailscale"
+if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
+    echo "  http://$(uci get network.lan.ipaddr)/cgi-bin/luci/admin/services/modbus"
+    echo "  http://$(uci get network.lan.ipaddr)/cgi-bin/luci/admin/services/mqtt"
+fi
 echo ""
 echo "Verifique o status do Tailscale:"
 echo "  tailscale status"
 echo ""
+if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
+    echo "Configure Modbus e MQTT via LuCI:"
+    echo "  Adicione dispositivos Modbus em Services > Modbus"
+    echo "  Configure broker MQTT em Services > MQTT"
+    echo ""
+fi
 echo "Para monitorar CPU:"
 echo "  curl -L $REPO_URL/cpu_monitor.sh -o /tmp/cpu_monitor.sh"
 echo "  chmod +x /tmp/cpu_monitor.sh"

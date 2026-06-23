@@ -1,0 +1,37 @@
+<%#
+Copyright 2024 Tailscale for ZLAN9809M Project
+Licensed under MIT License
+%>
+
+<div class="cbi-section-node">
+    <div class="table" id="modbus-status">
+        <div class="tr table-titles">
+            <div class="th left" width="25%">Device</div>
+            <div class="th left" width="20%">IP:Port</div>
+            <div class="th left" width="15%">Slave ID</div>
+            <div class="th left" width="20%">Status</div>
+            <div class="th left" width="20%">Enabled</div>
+        </div>
+        <div id="modbus-devices"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    XHR.poll(5, '<%=luci.dispatcher.build_url("admin/services/modbus/status")%>', null,
+        function(x, info) {
+            if (info && info.devices) {
+                var html = '';
+                info.devices.forEach(function(device) {
+                    html += '<div class="tr cbi-rowstyle-1">';
+                    html += '<div class="td left">' + (device.name || '-') + '</div>';
+                    html += '<div class="td left">' + device.ip + ':' + device.port + '</div>';
+                    html += '<div class="td left">' + device.slave_id + '</div>';
+                    html += '<div class="td left">' + device.status + '</div>';
+                    html += '<div class="td left">' + (device.enabled === '1' ? 'Yes' : 'No') + '</div>';
+                    html += '</div>';
+                });
+                document.getElementById('modbus-devices').innerHTML = html;
+            }
+        }
+    );
+</script>

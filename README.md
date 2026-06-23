@@ -35,6 +35,8 @@ Usando compressão XZ no binário, alcançamos **4.9MB**, que está dentro do li
 - Persistência de configuração na memória do dispositivo
 - Auto-detecção de range DHCP via hotplug
 - Configuração via CLI (UCI)
+- **Modbus TCP polling** (opcional)
+- **MQTT client para publicação de tags** (opcional)
 
 **Nota:** Interface LuCI está disponível no código mas não incluída no pacote minimal para economizar espaço.
 
@@ -201,6 +203,143 @@ tailscale status
 
 Se você instalou os arquivos LuCI manualmente, acesse:
 `http://router-ip/cgi-bin/luci/admin/network/tailscale`
+
+## Modbus TCP + MQTT (Opcional)
+
+Este projeto inclui suporte opcional para Modbus TCP polling e MQTT publishing.
+
+### Funcionalidades
+
+- **Modbus TCP Polling**: Leitura periódica de dispositivos Modbus TCP/IP
+- **MQTT Publishing**: Publicação automática de tags lidas para broker MQTT
+- **Interface LuCI**: Configuração visual para Modbus e MQTT
+- **Persistência**: Estado salvo em `/var/lib/modbus-daemon/state.json`
+
+### Instalação
+
+#### Via auto_install.sh
+
+Execute o script e responda "y" quando perguntado sobre Modbus+MQTT:
+
+```bash
+curl -L https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/main/auto_install.sh | bash
+```
+
+#### Manual
+
+Transfira os pacotes para o roteador:
+
+```bash
+# Dependências
+scp output/libmodbus-3.1.10-mipsel_24kc.ipk root@router-ip:/tmp/
+scp output/mosquitto-client-2.0.18-mipsel_24kc.ipk root@router-ip:/tmp/
+
+# Daemons
+scp output/modbus-daemon-mipsel_24kc.ipk root@router-ip:/tmp/
+scp output/mqtt-daemon-mipsel_24kc.ipk root@router-ip:/tmp/
+
+# Interfaces LuCI
+scp output/luci-app-modbus_1.0-1_mipsel_24kc.ipk root@router-ip:/tmp/
+scp output/luci-app-mqtt_1.0-1_mipsel_24kc.ipk root@router-ip:/tmp/
+```
+
+No roteador:
+
+```bash
+opkg install /tmp/libmodbus-3.1.10-mipsel_24kc.ipk
+opkg install /tmp/mosquitto-client-2.0.18-mipsel_24kc.ipk
+opkg install /tmp/modbus-daemon-mipsel_24kc.ipk
+opkg install /tmp/mqtt-daemon-mipsel_24kc.ipk
+opkg install /tmp/luci-app-modbus_1.0-1_mipsel_24kc.ipk
+opkg install /tmp/luci-app-mqtt_1.0-1_mipsel_24kc.ipk
+/etc/init.d/uhttpd restart
+```
+
+### Configuração
+
+#### Modbus via LuCI
+
+Acesse: `http://router-ip/cgi-bin/luci/admin/services/modbus`
+
+1. Adicione um dispositivo Modbus:
+   - Nome: ex: "PLC Principal"
+   - IP: Endereço IP do dispositivo
+   - Port: 502 (padrão)
+   - Slave ID: 1 (padrão)
+   - Poll Interval: 5 segundos
+   - Timeout: 3 segundos
+
+2. Adicione tags para o dispositivo:
+   - Device: Selecione o dispositivo
+   - Tag Name: ex: "Temperatura"
+   - Address: Endereço do registro (ex: 40001)
+   - Type: holding/input/coil/discrete
+   - Scale: Fator de escala (ex: 0.1)
+   - Offset: Offset (ex: 0)
+
+#### MQTT via LuCI
+
+Acesse: `http://router-ip/cgi-bin/luci/admin/services/mqtt`
+
+1. Configure o broker:
+   - Broker URL: ex: "mqtt.eclipseprojects.io"
+   - Port: 1883
+   - Username/Password: (se necessário)
+   - Client ID: "zlan9809m"
+   - Keep Alive: 60 segundos
+   - Topic Prefix: "zlan9809m"
+
+#### Iniciar serviços
+
+```bash
+/etc/init.d/modbus-daemon start
+/etc/init.d/modbus-daemon enable
+/etc/init.d/mqtt-daemon start
+/etc/init.d/mqtt-daemon enable
+```
+
+### Estrutura de Tópicos MQTT
+
+As tags são publicadas no formato:
+```
+{topic_prefix}/{device_name}/{tag_name}
+```
+
+Payload:
+```json
+{
+  "value": 25.5,
+  "timestamp": 1719123456,
+  "quality": "good"
+}
+```
+
+### Requisitos de Espaço
+
+- libmodbus: ~600KB
+- mosquitto-client: ~600KB
+- modbus-daemon: ~1MB (com UPX)
+- mqtt-daemon: ~1MB (com UPX)
+- Interfaces LuCI: ~100KB
+- **Total**: ~3.3MB
+
+### Scripts de Build
+
+Para compilar os componentes Modbus+MQTT:
+
+```bash
+# Cross-compilar libmodbus
+./build-libmodbus.sh
+
+# Cross-compilar mosquitto
+./build-mosquitto.sh
+
+# Cross-compilar modbus-daemon
+./build-modbus-daemon.sh
+
+# Cross-compilar mqtt-daemon
+./build-mqtt-daemon.sh
+```
 
 ## Licença
 

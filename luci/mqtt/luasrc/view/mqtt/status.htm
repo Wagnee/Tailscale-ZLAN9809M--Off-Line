@@ -1,0 +1,47 @@
+<%#
+Copyright 2024 Tailscale for ZLAN9809M Project
+Licensed under MIT License
+%>
+
+<div class="cbi-section-node">
+    <div class="table" id="mqtt-status">
+        <div class="tr">
+            <div class="td left" width="33%"><strong>Status:</strong></div>
+            <div class="td left" id="mqtt-status-text">Checking...</div>
+        </div>
+        <div class="tr">
+            <div class="td left" width="33%"><strong>Broker:</strong></div>
+            <div class="td left" id="mqtt-broker">-</div>
+        </div>
+        <div class="tr">
+            <div class="td left" width="33%"><strong>Port:</strong></div>
+            <div class="td left" id="mqtt-port">-</div>
+        </div>
+        <div class="tr">
+            <div class="td left" width="33%"><strong>Enabled:</strong></div>
+            <div class="td left" id="mqtt-enabled">-</div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    XHR.poll(5, '<%=luci.dispatcher.build_url("admin/services/mqtt/status")%>', null,
+        function(x, info) {
+            if (info) {
+                var statusText = info.connection_status || 'unknown';
+                if (statusText === 'connected') {
+                    document.getElementById('mqtt-status-text').innerHTML = '<span style="color: green;">Connected</span>';
+                } else if (statusText === 'disconnected') {
+                    document.getElementById('mqtt-status-text').innerHTML = '<span style="color: red;">Disconnected</span>';
+                } else if (statusText === 'daemon_not_running') {
+                    document.getElementById('mqtt-status-text').innerHTML = '<span style="color: orange;">Daemon Not Running</span>';
+                } else {
+                    document.getElementById('mqtt-status-text').textContent = statusText;
+                }
+                document.getElementById('mqtt-broker').textContent = info.broker || '-';
+                document.getElementById('mqtt-port').textContent = info.port || '-';
+                document.getElementById('mqtt-enabled').textContent = info.enabled === '1' ? 'Yes' : 'No';
+            }
+        }
+    );
+</script>
