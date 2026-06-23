@@ -176,12 +176,6 @@ opkg remove cron 2>/dev/null || true
 opkg remove rsync 2>/dev/null || true
 opkg remove wget 2>/dev/null || true
 
-# Limpar cache opkg
-echo "=========================================="
-echo "Limpando cache opkg..."
-echo "=========================================="
-opkg clean
-
 # Limpar arquivos temporários
 echo "=========================================="
 echo "Limpando arquivos temporários..."
