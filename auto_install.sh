@@ -248,9 +248,9 @@ echo "=========================================="
 REPO_URL="https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/main"
 
 # Baixar cleanup.sh
-echo "Baixando cleanup.sh..."
-$DOWNLOAD_CMD "$REPO_URL/cleanup.sh" $DOWNLOAD_OPTS cleanup.sh
-chmod +x cleanup.sh
+#echo "Baixando cleanup.sh..."
+#$DOWNLOAD_CMD "$REPO_URL/cleanup.sh" $DOWNLOAD_OPTS cleanup.sh
+#chmod +x cleanup.sh
 
 # Baixar pacotes IPK (se disponíveis no repositório)
 echo "Baixando pacotes IPK..."
