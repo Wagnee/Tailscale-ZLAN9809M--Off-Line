@@ -138,11 +138,14 @@ Para criar o pacote IPK LuCI (opcional):
 
 ```bash
 scp output/tailscale-zlan9809m-core_1.68.1-1_mipsel_24kc.ipk root@router-ip:/tmp/
+scp opkg-preflight.sh root@router-ip:/tmp/
 ```
 
 No roteador:
 
 ```bash
+chmod +x /tmp/opkg-preflight.sh
+/tmp/opkg-preflight.sh
 opkg update
 opkg install xz
 opkg install /tmp/tailscale-zlan9809m-core_1.68.1-1_mipsel_24kc.ipk
@@ -174,6 +177,7 @@ Execute o script de instalação no roteador:
 ### Manual
 
 ```bash
+./opkg-preflight.sh
 opkg install kmod-tun ca-bundle
 chmod +x /usr/sbin/tailscaled
 /etc/init.d/tailscale enable

@@ -15,6 +15,18 @@ if [ ! -f /etc/openwrt_release ]; then
     exit 1
 fi
 
+# Preparar o OPKG antes de qualquer consulta ou instalação.
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+OPKG_PREFLIGHT="$SCRIPT_DIR/opkg-preflight.sh"
+
+if [ ! -f "$OPKG_PREFLIGHT" ]; then
+    echo "ERRO: Arquivo opkg-preflight.sh não encontrado em $SCRIPT_DIR" >&2
+    echo "Transfira opkg-preflight.sh junto com install.sh e execute novamente." >&2
+    exit 1
+fi
+
+sh "$OPKG_PREFLIGHT"
+
 # Verificar arquitetura
 ARCH=$(uname -m)
 echo "Arquitetura detectada: $ARCH"

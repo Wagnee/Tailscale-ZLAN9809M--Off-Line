@@ -57,10 +57,13 @@ chmod +x install.sh
 1. Copie o arquivo .ipk para o roteador:
 ```bash
 scp output/tailscale-zlan9809m_*.ipk root@router-ip:/tmp/
+scp opkg-preflight.sh root@router-ip:/tmp/
 ```
 
 2. No roteador:
 ```bash
+chmod +x /tmp/opkg-preflight.sh
+/tmp/opkg-preflight.sh
 opkg update
 opkg install /tmp/tailscale-zlan9809m_*.ipk
 ```
@@ -70,10 +73,13 @@ opkg install /tmp/tailscale-zlan9809m_*.ipk
 1. Copie o binário:
 ```bash
 scp output/tailscaled root@router-ip:/tmp/
+scp opkg-preflight.sh root@router-ip:/tmp/
 ```
 
 2. No roteador:
 ```bash
+chmod +x /tmp/opkg-preflight.sh
+/tmp/opkg-preflight.sh
 opkg update
 opkg install kmod-tun ca-bundle ip-full ipset ipset6
 mkdir -p /usr/sbin /etc/tailscale /etc/config /etc/init.d /etc/hotplug.d/iface /etc/uci-defaults

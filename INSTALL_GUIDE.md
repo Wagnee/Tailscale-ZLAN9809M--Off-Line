@@ -31,6 +31,9 @@
 # Transferir pacote core
 scp output/tailscale-zlan9809m-core_1.68.1-1_mipsel_24kc.ipk root@router-ip:/tmp/
 
+# Transferir preparador do OPKG
+scp opkg-preflight.sh root@router-ip:/tmp/
+
 # Transferir pacote LuCI (opcional)
 scp output/luci-app-tailscale-zlan9809m_1.68.1-1_mipsel_24kc.ipk root@router-ip:/tmp/
 ```
@@ -43,6 +46,10 @@ ssh root@router-ip
 
 # Verificar espaço disponível
 df -h /overlay
+
+# Corrigir o diretório de lock e feeds duplicados, se necessário
+chmod +x /tmp/opkg-preflight.sh
+/tmp/opkg-preflight.sh
 
 # Instalar dependências
 opkg update
@@ -82,6 +89,7 @@ Este método usa a memória RAM como buffer temporário para evitar problemas de
 ```bash
 # Transferir script e pacotes
 scp install.sh root@router-ip:/tmp/
+scp opkg-preflight.sh root@router-ip:/tmp/
 scp output/tailscale-zlan9809m-core_1.68.1-1_mipsel_24kc.ipk root@router-ip:/tmp/
 scp output/luci-app-tailscale-zlan9809m_1.68.1-1_mipsel_24kc.ipk root@router-ip:/tmp/
 
@@ -104,8 +112,15 @@ O script automaticamente:
 ### Método 3: Instalação Manual
 
 ```bash
+# Transferir o preparador do OPKG antes de acessar o roteador
+scp opkg-preflight.sh root@router-ip:/tmp/
+
 # SSH no roteador
 ssh root@router-ip
+
+# Corrigir o diretório de lock e feeds duplicados, se necessário
+chmod +x /tmp/opkg-preflight.sh
+/tmp/opkg-preflight.sh
 
 # Instalar dependências
 opkg update
@@ -198,6 +213,31 @@ logread | grep tailscale
 ```
 
 ## Solução de Problemas
+
+### Erro: fonte duplicada ou `/var/lock/opkg.lock` inexistente
+
+Os instaladores executam `opkg-preflight.sh` antes do primeiro comando `opkg`. O script:
+
+- cria `/var/lock` quando o firmware não o criou;
+- procura declarações `src` e `src/gz` com o mesmo nome em `/etc/opkg.conf` e `/etc/opkg/*.conf`;
+- mantém a primeira declaração, que é a mesma escolhida pelo `opkg`;
+- comenta somente as declarações posteriores e preserva um backup com sufixo `.tailscale-backup`.
+
+Para corrigir manualmente uma instalação que já parou com esse erro:
+
+```bash
+wget -qO /tmp/opkg-preflight.sh \
+  https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/main/opkg-preflight.sh
+chmod +x /tmp/opkg-preflight.sh
+/tmp/opkg-preflight.sh
+opkg update
+```
+
+Para localizar as declarações originais:
+
+```bash
+grep -nE '^[[:space:]]*src(/gz)?[[:space:]]+' /etc/opkg.conf /etc/opkg/*.conf
+```
 
 ### Erro: Espaço insuficiente
 

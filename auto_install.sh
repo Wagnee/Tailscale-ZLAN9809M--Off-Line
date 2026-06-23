@@ -66,8 +66,6 @@ echo ""
 echo "Uso de RAM:"
 free -h
 echo ""
-echo "Pacotes instalados: $(opkg list-installed | wc -l)"
-echo ""
 
 # Criar diretório temporário
 TMPDIR="/tmp/tailscale_auto_install"
@@ -76,7 +74,7 @@ cd "$TMPDIR"
 
 # Detectar curl ou wget
 if command -v curl >/dev/null 2>&1; then
-    DOWNLOAD_CMD="curl -L"
+    DOWNLOAD_CMD="curl -fL"
     DOWNLOAD_OPTS="-o"
 elif command -v wget >/dev/null 2>&1; then
     DOWNLOAD_CMD="wget -q"
@@ -86,12 +84,25 @@ else
     exit 1
 fi
 
+REPO_URL="https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/main"
+
+# Corrigir feeds duplicados e garantir que o OPKG consiga criar seu lock.
+echo "=========================================="
+echo "Preparando OPKG..."
+echo "=========================================="
+if ! $DOWNLOAD_CMD "$REPO_URL/opkg-preflight.sh" $DOWNLOAD_OPTS opkg-preflight.sh; then
+    echo "ERRO: Não foi possível baixar o preparador do OPKG." >&2
+    exit 1
+fi
+chmod +x opkg-preflight.sh
+./opkg-preflight.sh
+echo "Pacotes instalados: $(opkg list-installed | wc -l)"
+echo ""
+
 # Baixar scripts necessários
 echo "=========================================="
 echo "Baixando scripts..."
 echo "=========================================="
-REPO_URL="https://raw.githubusercontent.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/main"
-
 # Baixar cleanup.sh
 #echo "Baixando cleanup.sh..."
 #$DOWNLOAD_CMD "$REPO_URL/cleanup.sh" $DOWNLOAD_OPTS cleanup.sh
