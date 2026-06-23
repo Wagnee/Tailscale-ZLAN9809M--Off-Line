@@ -47,9 +47,9 @@ cat > "${BUILD_DIR}/CONTROL/postinst" <<'EOF'
 EOF
 chmod +x "${BUILD_DIR}/CONTROL/postinst"
 
-# Criar IPK
+# Criar IPK manualmente (tar.gz com estrutura IPK)
 cd "${BUILD_DIR}"
-ipkg-build -o root -g root . "${OUTPUT_DIR}"
+tar -czf "${OUTPUT_DIR}/luci-app-modbus_${VERSION}_mipsel_24kc.ipk" ./CONTROL ./usr
 
 echo "=========================================="
 echo "Pacote IPK criado!"

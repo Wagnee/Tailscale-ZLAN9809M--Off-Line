@@ -7,7 +7,7 @@ set -e
 VERSION="2.0.18"
 BUILD_DIR="$(pwd)/build-mosquitto"
 OUTPUT_DIR="$(pwd)/output"
-TOOLCHAIN_URL="https://archive.openwrt.org/releases/22.03.5/targets/ramips/mt76x8/OpenWrt-SDK-22.03.5-ramips-mt76x8_gcc-11.2.0_musl.Linux-x86_64.tar.xz"
+TOOLCHAIN_URL="https://archive.openwrt.org/releases/21.02.2/targets/ramips/mt76x8/openwrt-sdk-21.02.2-ramips-mt76x8_gcc-8.4.0_musl.Linux-x86_64.tar.xz"
 
 echo "=========================================="
 echo "Cross-compilando mosquitto para MIPS 24Kc"
@@ -27,12 +27,19 @@ if [ ! -d "${SDK_DIR}" ]; then
     echo "Baixando OpenWrt SDK..."
     wget --no-check-certificate -O openwrt-sdk.tar.xz "${TOOLCHAIN_URL}"
     tar -xf openwrt-sdk.tar.xz
-    mv OpenWrt-SDK-* "${SDK_DIR}"
+    # O nome do diretório extraído pode variar, usar ls para encontrar
+    EXTRACTED_DIR=$(ls -d openwrt-sdk-* 2>/dev/null | head -n 1)
+    if [ -n "$EXTRACTED_DIR" ]; then
+        mv "$EXTRACTED_DIR" "${SDK_DIR}"
+    else
+        echo "ERRO: Diretório extraído não encontrado"
+        exit 1
+    fi
     rm openwrt-sdk.tar.xz
 fi
 
 # Configurar toolchain
-TOOLCHAIN="${SDK_DIR}/staging_dir/toolchain-mipsel_24kc_gcc-11.2.0_musl"
+TOOLCHAIN="${SDK_DIR}/staging_dir/toolchain-mipsel_24kc_gcc-8.4.0_musl"
 export PATH="${TOOLCHAIN}/bin:$PATH"
 export CC=mipsel-openwrt-linux-gcc
 export CXX=mipsel-openwrt-linux-g++
@@ -49,24 +56,29 @@ wget --no-check-certificate "https://github.com/eclipse/mosquitto/archive/refs/t
 tar -xf "v${VERSION}.tar.gz"
 cd "mosquitto-${VERSION}"
 
-# Configurar
-echo "Configurando mosquitto..."
-cat > config.mk <<EOF
-WITH_SRV=no
-WITH_WEBSOCKETS=no
-WITH_DOCS=no
-WITH_SHARED_LIBRARIES=no
-WITH_STATIC_LIBRARIES=no
-WITH_CLIENTS=yes
-WITH_BROKER=no
-WITH_APPS=no
-CFLAGS=-O2 -pipe -mno-branch-likely -mips32r2 -mtune=24kc
-LDFLAGS=-s
-CC=mipsel-openwrt-linux-gcc
-CXX=mipsel-openwrt-linux-g++
-AR=mipsel-openwrt-linux-ar
-STRIP=mipsel-openwrt-linux-strip
-EOF
+# Configurar com cmake
+echo "Configurando mosquitto com cmake..."
+mkdir -p build
+cd build
+cmake .. \
+    -DCMAKE_C_COMPILER=mipsel-openwrt-linux-gcc \
+    -DCMAKE_CXX_COMPILER=mipsel-openwrt-linux-g++ \
+    -DCMAKE_AR=mipsel-openwrt-linux-ar \
+    -DCMAKE_STRIP=mipsel-openwrt-linux-strip \
+    -DCMAKE_SYSTEM_NAME=Linux \
+    -DCMAKE_SYSTEM_PROCESSOR=mips \
+    -DCMAKE_C_FLAGS="-O2 -pipe -mno-branch-likely -mips32r2 -mtune=24kc" \
+    -DCMAKE_CXX_FLAGS="-O2 -pipe -mno-branch-likely -mips32r2 -mtune=24kc" \
+    -DDOCUMENTATION=OFF \
+    -DWITH_STATIC_LIBRARIES=OFF \
+    -DWITH_SHARED_LIBRARIES=OFF \
+    -DWITH_CLIENTS=ON \
+    -DWITH_BROKER=OFF \
+    -DWITH_APPS=OFF \
+    -DWITH_SRV=OFF \
+    -DWITH_WEBSOCKETS=OFF \
+    -DWITH_TLS=OFF \
+    -DWITH_THREADING=OFF
 
 # Compilar
 echo "Compilando mosquitto..."

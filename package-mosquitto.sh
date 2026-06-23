@@ -20,13 +20,11 @@ mkdir -p "${BUILD_DIR}/CONTROL"
 mkdir -p "${BUILD_DIR}/usr/bin"
 
 # Copiar binários se existirem
-if [ -f "${OUTPUT_DIR}/mosquitto-client-${VERSION}-mipsel_24kc.tar.gz" ]; then
-    tar -xzf "${OUTPUT_DIR}/mosquitto-client-${VERSION}-mipsel_24kc.tar.gz" -C "${BUILD_DIR}"
+if [ -f "${OUTPUT_DIR}/mosquitto-client-2.0.18-mipsel_24kc.tar.gz" ]; then
+    tar -xzf "${OUTPUT_DIR}/mosquitto-client-2.0.18-mipsel_24kc.tar.gz" -C "${BUILD_DIR}"
 else
-    echo "AVISO: Binários não encontrados, usando placeholder"
-    mkdir -p "${BUILD_DIR}/usr/bin"
-    touch "${BUILD_DIR}/usr/bin/mosquitto_pub"
-    touch "${BUILD_DIR}/usr/bin/mosquitto_sub"
+    echo "ERRO: Binários não encontrados em ${OUTPUT_DIR}/mosquitto-client-2.0.18-mipsel_24kc.tar.gz"
+    exit 1
 fi
 
 # Criar CONTROL/control
@@ -42,9 +40,9 @@ Homepage: https://github.com/eclipse/mosquitto
 License: EPL-2.0
 EOF
 
-# Criar IPK
+# Criar IPK manualmente (tar.gz com estrutura IPK)
 cd "${BUILD_DIR}"
-ipkg-build -o root -g root . "${OUTPUT_DIR}"
+tar -czf "${OUTPUT_DIR}/mosquitto-client_${VERSION}_mipsel_24kc.ipk" ./CONTROL ./usr
 
 echo "=========================================="
 echo "Pacote IPK criado!"

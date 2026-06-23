@@ -20,12 +20,11 @@ mkdir -p "${BUILD_DIR}/CONTROL"
 mkdir -p "${BUILD_DIR}/usr/lib"
 
 # Copiar biblioteca se existir
-if [ -f "${OUTPUT_DIR}/libmodbus-${VERSION}-mipsel_24kc.tar.gz" ]; then
-    tar -xzf "${OUTPUT_DIR}/libmodbus-${VERSION}-mipsel_24kc.tar.gz" -C "${BUILD_DIR}"
+if [ -f "${OUTPUT_DIR}/libmodbus-3.1.10-mipsel_24kc.tar.gz" ]; then
+    tar -xzf "${OUTPUT_DIR}/libmodbus-3.1.10-mipsel_24kc.tar.gz" -C "${BUILD_DIR}"
 else
-    echo "AVISO: Biblioteca não encontrada, usando placeholder"
-    mkdir -p "${BUILD_DIR}/usr/lib"
-    touch "${BUILD_DIR}/usr/lib/libmodbus.so.5"
+    echo "ERRO: Biblioteca não encontrada em ${OUTPUT_DIR}/libmodbus-3.1.10-mipsel_24kc.tar.gz"
+    exit 1
 fi
 
 # Criar CONTROL/control
@@ -41,9 +40,9 @@ Homepage: https://github.com/stephane/libmodbus
 License: LGPL-2.1
 EOF
 
-# Criar IPK
+# Criar IPK manualmente (tar.gz com estrutura IPK)
 cd "${BUILD_DIR}"
-ipkg-build -o root -g root . "${OUTPUT_DIR}"
+tar -czf "${OUTPUT_DIR}/libmodbus_${VERSION}_mipsel_24kc.ipk" ./CONTROL ./usr
 
 echo "=========================================="
 echo "Pacote IPK criado!"

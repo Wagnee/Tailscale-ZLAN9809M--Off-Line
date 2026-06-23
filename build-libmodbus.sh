@@ -7,7 +7,7 @@ set -e
 VERSION="3.1.10"
 BUILD_DIR="$(pwd)/build-libmodbus"
 OUTPUT_DIR="$(pwd)/output"
-TOOLCHAIN_URL="https://archive.openwrt.org/releases/22.03.5/targets/ramips/mt76x8/OpenWrt-SDK-22.03.5-ramips-mt76x8_gcc-11.2.0_musl.Linux-x86_64.tar.xz"
+TOOLCHAIN_URL="https://archive.openwrt.org/releases/21.02.2/targets/ramips/mt76x8/openwrt-sdk-21.02.2-ramips-mt76x8_gcc-8.4.0_musl.Linux-x86_64.tar.xz"
 
 echo "=========================================="
 echo "Cross-compilando libmodbus para MIPS 24Kc"
@@ -27,12 +27,19 @@ if [ ! -d "${SDK_DIR}" ]; then
     echo "Baixando OpenWrt SDK..."
     wget --no-check-certificate -O openwrt-sdk.tar.xz "${TOOLCHAIN_URL}"
     tar -xf openwrt-sdk.tar.xz
-    mv OpenWrt-SDK-* "${SDK_DIR}"
+    # O nome do diretório extraído pode variar, usar ls para encontrar
+    EXTRACTED_DIR=$(ls -d openwrt-sdk-* 2>/dev/null | head -n 1)
+    if [ -n "$EXTRACTED_DIR" ]; then
+        mv "$EXTRACTED_DIR" "${SDK_DIR}"
+    else
+        echo "ERRO: Diretório extraído não encontrado"
+        exit 1
+    fi
     rm openwrt-sdk.tar.xz
 fi
 
 # Configurar toolchain
-TOOLCHAIN="${SDK_DIR}/staging_dir/toolchain-mipsel_24kc_gcc-11.2.0_musl"
+TOOLCHAIN="${SDK_DIR}/staging_dir/toolchain-mipsel_24kc_gcc-8.4.0_musl"
 export PATH="${TOOLCHAIN}/bin:$PATH"
 export CC=mipsel-openwrt-linux-gcc
 export CXX=mipsel-openwrt-linux-g++

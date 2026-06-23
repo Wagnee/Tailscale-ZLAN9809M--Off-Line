@@ -181,14 +181,14 @@ func readDevice(state *DeviceState) error {
 	return nil
 }
 
-func readTag(client *modbus.Client, tag TagConfig) (uint16, error) {
+func readTag(client modbus.Client, tag TagConfig) (uint16, error) {
 	switch tag.Type {
 	case "coil":
 		results, err := client.ReadCoils(tag.Addr, 1)
 		if err != nil {
 			return 0, err
 		}
-		if len(results) > 0 && results[0] {
+		if len(results) > 0 && results[0] > 0 {
 			return 1, nil
 		}
 		return 0, nil
@@ -197,7 +197,7 @@ func readTag(client *modbus.Client, tag TagConfig) (uint16, error) {
 		if err != nil {
 			return 0, err
 		}
-		if len(results) > 0 && results[0] {
+		if len(results) > 0 && results[0] > 0 {
 			return 1, nil
 		}
 		return 0, nil
@@ -207,7 +207,7 @@ func readTag(client *modbus.Client, tag TagConfig) (uint16, error) {
 			return 0, err
 		}
 		if len(results) > 0 {
-			return results[0], nil
+			return uint16(results[0])<<8 | uint16(results[1]), nil
 		}
 		return 0, nil
 	case "input":
@@ -216,7 +216,7 @@ func readTag(client *modbus.Client, tag TagConfig) (uint16, error) {
 			return 0, err
 		}
 		if len(results) > 0 {
-			return results[0], nil
+			return uint16(results[0])<<8 | uint16(results[1]), nil
 		}
 		return 0, nil
 	default:

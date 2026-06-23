@@ -25,8 +25,8 @@ mkdir -p "${BUILD_DIR}/etc/config"
 if [ -f "${OUTPUT_DIR}/mqtt-daemon-mipsel_24kc.tar.gz" ]; then
     tar -xzf "${OUTPUT_DIR}/mqtt-daemon-mipsel_24kc.tar.gz" -C "${BUILD_DIR}"
 else
-    echo "AVISO: Binário não encontrado, usando placeholder"
-    touch "${BUILD_DIR}/usr/bin/mqtt-daemon"
+    echo "ERRO: Binário não encontrado em ${OUTPUT_DIR}/mqtt-daemon-mipsel_24kc.tar.gz"
+    exit 1
 fi
 
 # Copiar script de init
@@ -64,9 +64,9 @@ cat > "${BUILD_DIR}/CONTROL/prerm" <<'EOF'
 EOF
 chmod +x "${BUILD_DIR}/CONTROL/prerm"
 
-# Criar IPK
+# Criar IPK manualmente (tar.gz com estrutura IPK)
 cd "${BUILD_DIR}"
-ipkg-build -o root -g root . "${OUTPUT_DIR}"
+tar -czf "${OUTPUT_DIR}/mqtt-daemon_${VERSION}_mipsel_24kc.ipk" ./CONTROL ./usr ./etc
 
 echo "=========================================="
 echo "Pacote IPK criado!"
