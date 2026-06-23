@@ -69,7 +69,7 @@ echo ""
 echo "Pacotes instalados: $(opkg list-installed | wc -l)"
 echo ""
 
-set -e
+#set -e
 
 echo "=========================================="
 echo "Limpeza de Espaço - ZLAN9809M"
@@ -81,9 +81,9 @@ echo "Fazendo backup da lista de pacotes..."
 #opkg list-installed > /tmp/packages_before.txt
 
 # Mostrar espaço antes
-echo "Espaço antes da limpeza:"
-df -h /overlay
-echo ""
+#echo "Espaço antes da limpeza:"
+#df -h /overlay
+#echo ""
 
 # Remover VPNs alternativas (Tailscale substitui)
 echo "=========================================="
