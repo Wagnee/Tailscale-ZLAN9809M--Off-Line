@@ -24,6 +24,13 @@ echo "Isso adicionará funcionalidades de polling Modbus e publicação MQTT"
 read -p "Instalar Modbus+MQTT? (y/N): " INSTALL_MODBUS_MQTT
 INSTALL_MODBUS_MQTT=$(echo "$INSTALL_MODBUS_MQTT" | tr '[:upper:]' '[:lower:]')
 
+# Perguntar sobre Terminal Web
+echo "Deseja instalar também o Terminal Web (LuCI)?"
+echo "Isso adicionará acesso ao terminal via interface web (consome ~2-3MB RAM constantemente)"
+echo "Recomendação: Use SSH para economizar RAM"
+read -p "Instalar Terminal Web? (y/N): " INSTALL_TERMINAL
+INSTALL_TERMINAL=$(echo "$INSTALL_TERMINAL" | tr '[:upper:]' '[:lower:]')
+
 # Mostrar especificações do hardware
 echo "=========================================="
 echo "Especificações do Hardware - ZLAN9809M"
@@ -160,6 +167,17 @@ if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
     echo "Modbus+MQTT instalado!"
 fi
 
+# Instalar Terminal Web se solicitado
+if [ "$INSTALL_TERMINAL" = "y" ]; then
+    echo "=========================================="
+    echo "Instalando Terminal Web..."
+    echo "=========================================="
+    opkg install luci-app-terminal
+    /etc/init.d/uhttpd restart
+    echo "Terminal Web instalado!"
+    echo "Acesse em: LuCI → System → Terminal"
+fi
+
 # Configurar Tailscale
 echo "=========================================="
 echo "Configurando Tailscale..."
@@ -224,6 +242,9 @@ echo "- Bluetooth removido (economia de espaço)"
 if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
     echo "- Modbus+MQTT instalado (polling e publicação)"
 fi
+if [ "$INSTALL_TERMINAL" = "y" ]; then
+    echo "- Terminal Web instalado (acesso via LuCI, +2-3MB RAM)"
+fi
 echo ""
 echo "Acesse LuCI:"
 echo "  http://$(uci get network.lan.ipaddr)/cgi-bin/luci/admin/network/tailscale"
@@ -239,6 +260,13 @@ if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
     echo "Configure Modbus e MQTT via LuCI:"
     echo "  Adicione dispositivos Modbus em Services > Modbus"
     echo "  Configure broker MQTT em Services > MQTT"
+    echo ""
+fi
+if [ "$INSTALL_TERMINAL" = "y" ]; then
+    echo "Terminal Web:"
+    echo "  Acesse em: LuCI → System → Terminal"
+    echo "  Uso RAM: ~2-3MB constantes"
+    echo "  Alternativa: SSH (mais leve)"
     echo ""
 fi
 echo "Para monitorar CPU:"
