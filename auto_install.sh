@@ -24,6 +24,13 @@ echo "Isso adicionará funcionalidades de polling Modbus e publicação MQTT"
 read -p "Instalar Modbus+MQTT? (y/N): " INSTALL_MODBUS_MQTT
 INSTALL_MODBUS_MQTT=$(echo "$INSTALL_MODBUS_MQTT" | tr '[:upper:]' '[:lower:]')
 
+# Perguntar sobre Auto-Update Daemon
+echo "Deseja instalar também o Daemon de Auto-Update?"
+echo "Isso permitirá execução automática de scripts do repositório (apenas scripts na whitelist)"
+echo "⚠️  ATENÇÃO: Isso permite execução remota de scripts - use apenas se confiar no repositório"
+read -p "Instalar Auto-Update Daemon? (y/N): " INSTALL_AUTO_UPDATE
+INSTALL_AUTO_UPDATE=$(echo "$INSTALL_AUTO_UPDATE" | tr '[:upper:]' '[:lower:]')
+
 # Perguntar sobre Terminal Web
 echo "Deseja instalar também o Terminal Web (LuCI)?"
 echo "Isso adicionará acesso ao terminal via interface web (consome ~2-3MB RAM constantemente)"
@@ -97,6 +104,14 @@ if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
     $DOWNLOAD_CMD "$REPO_URL/output/mqtt-daemon_1.0-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS mqtt-daemon.ipk || echo "Pacote mqtt-daemon não encontrado"
     $DOWNLOAD_CMD "$REPO_URL/output/luci-app-modbus_1.0-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS luci-modbus.ipk || echo "Pacote luci-modbus não encontrado"
     $DOWNLOAD_CMD "$REPO_URL/output/luci-app-mqtt_1.0-1_mipsel_24kc.ipk" $DOWNLOAD_OPTS luci-mqtt.ipk || echo "Pacote luci-mqtt não encontrado"
+fi
+
+# Baixar scripts de auto-update se solicitado
+if [ "$INSTALL_AUTO_UPDATE" = "y" ]; then
+    echo "Baixando scripts de auto-update..."
+    $DOWNLOAD_CMD "$REPO_URL/scripts/auto-update-daemon.sh" $DOWNLOAD_OPTS auto-update-daemon.sh || echo "Daemon não encontrado"
+    $DOWNLOAD_CMD "$REPO_URL/scripts/auto-update-whitelist.conf" $DOWNLOAD_OPTS auto-update-whitelist.conf || echo "Whitelist não encontrado"
+    $DOWNLOAD_CMD "$REPO_URL/scripts/install-auto-update-daemon.sh" $DOWNLOAD_OPTS install-auto-update-daemon.sh || echo "Script de instalação não encontrado"
 fi
 
 # Verificar se os pacotes foram baixados
@@ -178,6 +193,62 @@ if [ "$INSTALL_TERMINAL" = "y" ]; then
     echo "Acesse em: LuCI → System → Terminal"
 fi
 
+# Instalar Auto-Update Daemon se solicitado
+if [ "$INSTALL_AUTO_UPDATE" = "y" ]; then
+    echo "=========================================="
+    echo "Instalando Auto-Update Daemon..."
+    echo "=========================================="
+    
+    # Criar diretório para scripts
+    mkdir -p /usr/lib/auto-update
+    
+    # Copiar scripts
+    if [ -f auto-update-daemon.sh ]; then
+        cp auto-update-daemon.sh /usr/lib/auto-update/
+        chmod +x /usr/lib/auto-update/auto-update-daemon.sh
+        echo "Daemon copiado para /usr/lib/auto-update/"
+    fi
+    
+    # Copiar whitelist
+    if [ -f auto-update-whitelist.conf ]; then
+        cp auto-update-whitelist.conf /etc/
+        chmod 644 /etc/auto-update-whitelist.conf
+        echo "Whitelist copiada para /etc/"
+    fi
+    
+    # Criar diretório para hashes
+    mkdir -p /var/lib/auto-update-executed
+    
+    # Criar init script
+    cat > /etc/init.d/auto-update <<'EOF'
+#!/bin/sh /etc/rc.common
+USE_PROCD=1
+START=99
+STOP=10
+
+start_service() {
+    procd_open_instance
+    procd_set_param command /usr/lib/auto-update/auto-update-daemon.sh
+    procd_set_param respawn
+    procd_set_param stdout 1
+    procd_set_param stderr 1
+    procd_close_instance
+}
+
+stop_service() {
+    killall auto-update-daemon.sh 2>/dev/null
+}
+EOF
+    chmod +x /etc/init.d/auto-update
+    
+    # Habilitar e iniciar daemon
+    /etc/init.d/auto-update enable
+    /etc/init.d/auto-update start
+    
+    echo "Auto-Update Daemon instalado e iniciado!"
+    echo "Logs: tail -f /var/log/auto-update-daemon.log"
+fi
+
 # Configurar Tailscale
 echo "=========================================="
 echo "Configurando Tailscale..."
@@ -242,6 +313,9 @@ echo "- Bluetooth removido (economia de espaço)"
 if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
     echo "- Modbus+MQTT instalado (polling e publicação)"
 fi
+if [ "$INSTALL_AUTO_UPDATE" = "y" ]; then
+    echo "- Auto-Update Daemon instalado (execução de scripts remotos)"
+fi
 if [ "$INSTALL_TERMINAL" = "y" ]; then
     echo "- Terminal Web instalado (acesso via LuCI, +2-3MB RAM)"
 fi
@@ -260,6 +334,14 @@ if [ "$INSTALL_MODBUS_MQTT" = "y" ]; then
     echo "Configure Modbus e MQTT via LuCI:"
     echo "  Adicione dispositivos Modbus em Services > Modbus"
     echo "  Configure broker MQTT em Services > MQTT"
+    echo ""
+fi
+if [ "$INSTALL_AUTO_UPDATE" = "y" ]; then
+    echo "Auto-Update Daemon:"
+    echo "  Status: /etc/init.d/auto-update status"
+    echo "  Logs: tail -f /var/log/auto-update-daemon.log"
+    echo "  Whitelist: cat /etc/auto-update-whitelist.conf"
+    echo "  Para adicionar scripts: https://github.com/Wagnee/Tailscale-ZLAN9809M--Off-Line/tree/main/scripts"
     echo ""
 fi
 if [ "$INSTALL_TERMINAL" = "y" ]; then
